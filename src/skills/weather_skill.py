@@ -57,19 +57,19 @@ class WeatherSkill(BaseSkill):
 """
         return weather_info
 
-    def get_schema(self) -> Dict[str, Any]:
-        """获取技能Schema"""
+    def get_openai_schema(self) -> dict:
+        """获取OpenAI工具调用格式的schema"""
         return {
             "type": "function",
             "function": {
-                "name": self.name,
-                "description": self.description,
+                "name": "weather_query",
+                "description": "查询指定城市的天气情况，用于出行规划参考",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "city": {
                             "type": "string",
-                            "description": "要查询的城市名称"
+                            "description": "要查询的城市名称，如：北京、上海、杭州"
                         }
                     },
                     "required": ["city"]

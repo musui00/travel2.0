@@ -15,10 +15,26 @@ SKILLS = {
     "scenic_ticket": ScenicSkill(),
 }
 
+
+def get_all_tools_schemas() -> list:
+    """获取所有技能的工具schema（用于OpenAI Function Calling）"""
+    return [skill.get_openai_schema() for skill in SKILLS.values()]
+
+
+def execute_tool(tool_name: str, params: dict) -> str:
+    """执行指定工具"""
+    skill = SKILLS.get(tool_name)
+    if skill:
+        return skill.execute(params) or "工具执行失败"
+    return f"未知的工具: {tool_name}"
+
+
 __all__ = [
     "BaseSkill",
     "WeatherSkill",
     "FlightSkill",
     "ScenicSkill",
-    "SKILLS"
+    "SKILLS",
+    "get_all_tools_schemas",
+    "execute_tool"
 ]

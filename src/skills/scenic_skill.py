@@ -63,19 +63,19 @@ class ScenicSkill(BaseSkill):
 3. 景区内有多处餐饮点
 """
 
-    def get_schema(self) -> Dict[str, Any]:
-        """获取技能Schema"""
+    def get_openai_schema(self) -> dict:
+        """获取OpenAI工具调用格式的schema"""
         return {
             "type": "function",
             "function": {
-                "name": self.name,
-                "description": self.description,
+                "name": "scenic_ticket",
+                "description": "查询景点门票价格、开放时间、预约方式等信息",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "scenic_name": {
                             "type": "string",
-                            "description": "景点名称"
+                            "description": "景点名称，如：故宫、西湖、泰山"
                         },
                         "date": {
                             "type": "string",

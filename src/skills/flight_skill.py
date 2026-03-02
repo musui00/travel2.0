@@ -95,13 +95,13 @@ class FlightSkill(BaseSkill):
 
         return result
 
-    def get_schema(self) -> Dict[str, Any]:
-        """获取技能Schema"""
+    def get_openai_schema(self) -> dict:
+        """获取OpenAI工具调用格式的schema"""
         return {
             "type": "function",
             "function": {
-                "name": self.name,
-                "description": self.description,
+                "name": "flight_search",
+                "description": "查询航班信息，包括起降时间、价格、航空公司等",
                 "parameters": {
                     "type": "object",
                     "properties": {
