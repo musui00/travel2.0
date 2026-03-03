@@ -1,40 +1,26 @@
 """
 Skill工具模块
 封装外部API调用能力
+使用 LangChain Tool 格式
 """
 
-from src.skills.base_skill import BaseSkill
-from src.skills.weather_skill import WeatherSkill
-from src.skills.flight_skill import FlightSkill
-from src.skills.scenic_skill import ScenicSkill
+from src.skills.weather_skill import weather_query
+from src.skills.flight_skill import flight_search
+from src.skills.scenic_skill import scenic_ticket
 
-# 注册所有可用技能
-SKILLS = {
-    "weather_query": WeatherSkill(),
-    "flight_search": FlightSkill(),
-    "scenic_ticket": ScenicSkill(),
-}
+# 导出所有工具
+TOOLS = [weather_query, flight_search, scenic_ticket]
 
 
-def get_all_tools_schemas() -> list:
-    """获取所有技能的工具schema（用于OpenAI Function Calling）"""
-    return [skill.get_openai_schema() for skill in SKILLS.values()]
-
-
-def execute_tool(tool_name: str, params: dict) -> str:
-    """执行指定工具"""
-    skill = SKILLS.get(tool_name)
-    if skill:
-        return skill.execute(params) or "工具执行失败"
-    return f"未知的工具: {tool_name}"
+def get_all_tools():
+    """获取所有 LangChain Tools"""
+    return TOOLS
 
 
 __all__ = [
-    "BaseSkill",
-    "WeatherSkill",
-    "FlightSkill",
-    "ScenicSkill",
-    "SKILLS",
-    "get_all_tools_schemas",
-    "execute_tool",
+    "weather_query",
+    "flight_search",
+    "scenic_ticket",
+    "TOOLS",
+    "get_all_tools",
 ]

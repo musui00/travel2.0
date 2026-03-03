@@ -1,13 +1,13 @@
 """
 智能旅游规划系统 - 主入口
-采用多智能体架构，支持图片理解、景点推荐、旅游规划等功能
+采用 LangChain Agent 架构，支持图片理解、景点推荐、旅游规划等功能
 """
 
 import os
 import sys
 import base64
 import yaml
-from openai import OpenAI
+from langchain_openai import ChatOpenAI
 
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -28,7 +28,7 @@ def encode_image(image_path: str) -> str:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
 
-def analyze_image(client: OpenAI, model: str, image_path: str) -> str:
+def analyze_image(llm: ChatOpenAI, image_path: str) -> str:
     """分析图片，理解内容"""
     base64_image = encode_image(image_path)
 
@@ -41,43 +41,42 @@ def analyze_image(client: OpenAI, model: str, image_path: str) -> str:
 
 请用中文回复。"""
 
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": prompt},
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "请分析这张图片，描述图片中的内容。"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                    },
-                ],
-            },
-        ],
-        stream=False,
-    )
+    # 构建消息
+    messages = [
+        {"role": "system", "content": prompt},
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "请分析这张图片，描述图片中的内容。"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                },
+            ],
+        },
+    ]
 
-    return response.choices[0].message.content
+    # 调用模型
+    response = llm.invoke(messages)
+    return response.content
 
 
 def main():
     """主函数"""
     print("=" * 60)
-    print("欢迎使用智能旅游规划系统 (多智能体版)")
+    print("欢迎使用智能旅游规划系统 (LangChain版)")
     print("=" * 60)
 
     # 加载配置
     config = load_config()
 
-    # 初始化OpenAI客户端
-    client = OpenAI(
+    # 初始化 LangChain LLM
+    llm = ChatOpenAI(
+        model=config["MODEL_NAME"],
         base_url=config["MODELSCOPE_BASE_URL"],
         api_key=config["MODELSCOPE_API_KEY"],
+        temperature=0.7,
     )
-
-    model = config["MODEL_NAME"]
 
     # 获取用户输入
     print("\n请输入图片路径：")
@@ -92,16 +91,16 @@ def main():
     print("【图片理解】分析图片内容...")
     print("=" * 60)
 
-    image_analysis = analyze_image(client, model, image_path)
+    image_analysis = analyze_image(llm, image_path)
     print(image_analysis)
     print()
 
-    # 阶段2：多智能体处理
+    # 阶段2：LangChain Agent 处理
     print("\n" + "=" * 60)
-    print("【多智能体处理】主Agent开始调度...")
+    print("【LangChain Agent】开始生成旅游规划...")
     print("=" * 60)
 
-    main_agent = MainAgent(client)
+    main_agent = MainAgent(llm)
     user_requirement = input("请输入您的旅游需求（如：我要去这里玩3天）：")
 
     final_plan = main_agent.run(user_requirement, image_analysis)
