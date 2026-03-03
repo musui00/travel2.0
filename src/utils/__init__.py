@@ -4,4 +4,4 @@
 
 from src.utils.logger import logger, Logger
 
-__all__ = ['logger', 'Logger']
+__all__ = ["logger", "Logger"]

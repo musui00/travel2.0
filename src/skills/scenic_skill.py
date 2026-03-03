@@ -13,7 +13,7 @@ class ScenicSkill(BaseSkill):
     def __init__(self):
         super().__init__(
             name="scenic_ticket",
-            description="查询景点门票价格、开放时间、预约方式等信息"
+            description="查询景点门票价格、开放时间、预约方式等信息",
         )
 
     def execute(self, params: Dict[str, Any]) -> Optional[str]:
@@ -75,14 +75,11 @@ class ScenicSkill(BaseSkill):
                     "properties": {
                         "scenic_name": {
                             "type": "string",
-                            "description": "景点名称，如：故宫、西湖、泰山"
+                            "description": "景点名称，如：故宫、西湖、泰山",
                         },
-                        "date": {
-                            "type": "string",
-                            "description": "游玩日期"
-                        }
+                        "date": {"type": "string", "description": "游玩日期"},
                     },
-                    "required": ["scenic_name"]
-                }
-            }
+                    "required": ["scenic_name"],
+                },
+            },
         }

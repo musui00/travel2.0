@@ -13,7 +13,7 @@ class FlightSkill(BaseSkill):
     def __init__(self):
         super().__init__(
             name="flight_search",
-            description="查询航班信息，包括起降时间、价格、航空公司等"
+            description="查询航班信息，包括起降时间、价格、航空公司等",
         )
 
     def execute(self, params: Dict[str, Any]) -> Optional[str]:
@@ -57,7 +57,7 @@ class FlightSkill(BaseSkill):
                 "arrival": "10:30",
                 "duration": "2h30m",
                 "price": "¥580",
-                "type": "经济舱"
+                "type": "经济舱",
             },
             {
                 "airline": "南方航空 CZ",
@@ -66,7 +66,7 @@ class FlightSkill(BaseSkill):
                 "arrival": "16:25",
                 "duration": "2h25m",
                 "price": "¥650",
-                "type": "经济舱"
+                "type": "经济舱",
             },
             {
                 "airline": "国航 CA",
@@ -75,8 +75,8 @@ class FlightSkill(BaseSkill):
                 "arrival": "21:55",
                 "duration": "2h25m",
                 "price": "¥720",
-                "type": "经济舱"
-            }
+                "type": "经济舱",
+            },
         ]
 
         result = f"从 {from_city} 到 {to_city} 的航班信息：\n\n"
@@ -105,20 +105,14 @@ class FlightSkill(BaseSkill):
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "from_city": {
-                            "type": "string",
-                            "description": "出发城市"
-                        },
-                        "to_city": {
-                            "type": "string",
-                            "description": "目的城市"
-                        },
+                        "from_city": {"type": "string", "description": "出发城市"},
+                        "to_city": {"type": "string", "description": "目的城市"},
                         "date": {
                             "type": "string",
-                            "description": "出发日期，格式YYYY-MM-DD"
-                        }
+                            "description": "出发日期，格式YYYY-MM-DD",
+                        },
                     },
-                    "required": ["from_city", "to_city"]
-                }
-            }
+                    "required": ["from_city", "to_city"],
+                },
+            },
         }

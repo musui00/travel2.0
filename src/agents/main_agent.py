@@ -68,9 +68,9 @@ class MainAgent:
             model=self.model,
             messages=[
                 {"role": "system", "content": self.get_system_prompt()},
-                {"role": "user", "content": user_input}
+                {"role": "user", "content": user_input},
             ],
-            stream=False
+            stream=False,
         )
 
         content = response.choices[0].message.content
@@ -78,8 +78,8 @@ class MainAgent:
         # 尝试解析JSON
         try:
             # 查找JSON部分
-            start = content.find('{')
-            end = content.rfind('}') + 1
+            start = content.find("{")
+            end = content.rfind("}") + 1
             if start != -1 and end != 0:
                 json_str = content[start:end]
                 return json.loads(json_str)
@@ -92,11 +92,13 @@ class MainAgent:
                 {"agent": "sightseeing_agent", "task": "根据图片推荐景点"},
                 {"agent": "transport_agent", "task": "查询交通方式"},
                 {"agent": "accommodation_agent", "task": "推荐住宿"},
-                {"agent": "food_agent", "task": "推荐当地美食"}
+                {"agent": "food_agent", "task": "推荐当地美食"},
             ]
         }
 
-    def execute_tasks(self, tasks: List[Dict[str, Any]], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_tasks(
+        self, tasks: List[Dict[str, Any]], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """并发执行所有任务"""
         import concurrent.futures
 
@@ -143,7 +145,7 @@ class MainAgent:
                 "transport_agent": "交通专家",
                 "accommodation_agent": "住宿专家",
                 "sightseeing_agent": "景点专家",
-                "food_agent": "美食专家"
+                "food_agent": "美食专家",
             }.get(agent_name, agent_name)
 
             integration_prompt += f"\n## {agent_display_name}的建议：\n{result}\n"
@@ -161,9 +163,9 @@ class MainAgent:
             model=self.model,
             messages=[
                 {"role": "system", "content": "你是一个专业的旅游规划整合专家。"},
-                {"role": "user", "content": integration_prompt}
+                {"role": "user", "content": integration_prompt},
             ],
-            stream=True
+            stream=True,
         )
 
         result = ""
@@ -189,13 +191,12 @@ class MainAgent:
         print("=" * 60)
 
         # 构建上下文
-        context = {
-            "image_analysis": image_analysis,
-            "user_input": user_input
-        }
+        context = {"image_analysis": image_analysis, "user_input": user_input}
 
         # 1. 分析意图，拆解任务
-        task_config = self.analyze_intent(f"图片分析：{image_analysis}\n用户需求：{user_input}")
+        task_config = self.analyze_intent(
+            f"图片分析：{image_analysis}\n用户需求：{user_input}"
+        )
 
         print(f"\n任务拆解结果：")
         for task in task_config.get("tasks", []):

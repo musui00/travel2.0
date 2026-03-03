@@ -13,8 +13,7 @@ class WeatherSkill(BaseSkill):
 
     def __init__(self):
         super().__init__(
-            name="weather_query",
-            description="查询指定城市的天气情况，用于出行规划参考"
+            name="weather_query", description="查询指定城市的天气情况，用于出行规划参考"
         )
 
     def execute(self, params: Dict[str, Any]) -> Optional[str]:
@@ -69,10 +68,10 @@ class WeatherSkill(BaseSkill):
                     "properties": {
                         "city": {
                             "type": "string",
-                            "description": "要查询的城市名称，如：北京、上海、杭州"
+                            "description": "要查询的城市名称，如：北京、上海、杭州",
                         }
                     },
-                    "required": ["city"]
-                }
-            }
+                    "required": ["city"],
+                },
+            },
         }

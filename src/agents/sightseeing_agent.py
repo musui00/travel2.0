@@ -50,9 +50,9 @@ class SightseeingAgent:
             model=self.model,
             messages=[
                 {"role": "system", "content": self.get_system_prompt()},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
-            stream=False
+            stream=False,
         )
 
         return response.choices[0].message.content

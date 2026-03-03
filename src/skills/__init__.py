@@ -36,5 +36,5 @@ __all__ = [
     "ScenicSkill",
     "SKILLS",
     "get_all_tools_schemas",
-    "execute_tool"
+    "execute_tool",
 ]

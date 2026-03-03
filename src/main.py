@@ -25,7 +25,7 @@ def load_config():
 def encode_image(image_path: str) -> str:
     """将图片转换为base64编码"""
     with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode('utf-8')
+        return base64.b64encode(image_file.read()).decode("utf-8")
 
 
 def analyze_image(client: OpenAI, model: str, image_path: str) -> str:

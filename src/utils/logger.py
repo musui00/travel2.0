@@ -12,7 +12,7 @@ from typing import Optional
 class Logger:
     """日志收集器"""
 
-    _instance: Optional['Logger'] = None
+    _instance: Optional["Logger"] = None
     _logger: Optional[logging.Logger] = None
 
     def __new__(cls):
@@ -27,16 +27,16 @@ class Logger:
     def _setup_logger(self):
         """设置日志收集器"""
         # 创建logs目录
-        log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'logs')
+        log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "logs")
         os.makedirs(log_dir, exist_ok=True)
 
         # 创建logger
-        self._logger = logging.getLogger('travel_planner')
+        self._logger = logging.getLogger("travel_planner")
         self._logger.setLevel(logging.DEBUG)
 
         # 文件handler
         log_file = os.path.join(log_dir, f'app_{datetime.now().strftime("%Y%m%d")}.log')
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
         file_handler.setLevel(logging.DEBUG)
 
         # 控制台handler
@@ -45,7 +45,7 @@ class Logger:
 
         # 格式化
         formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
         file_handler.setFormatter(formatter)
         console_handler.setFormatter(formatter)

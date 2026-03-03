@@ -7,7 +7,7 @@ import sys
 import os
 
 # 添加项目根目录到路径
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 class TestSkills:
@@ -116,7 +116,7 @@ class TestUtils:
         from src.utils import logger
 
         # 测试日志方法存在
-        assert hasattr(logger, 'debug')
-        assert hasattr(logger, 'info')
-        assert hasattr(logger, 'warning')
-        assert hasattr(logger, 'error')
+        assert hasattr(logger, "debug")
+        assert hasattr(logger, "info")
+        assert hasattr(logger, "warning")
+        assert hasattr(logger, "error")
