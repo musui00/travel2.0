@@ -120,3 +120,63 @@ Never hardcode prompt strings in Python files. If an Agent's behavior needs tuni
 - `scenic_ticket` - 景点门票查询
 
 如需接入真实API，修改对应 Tool 函数。
+
+---
+
+## Project Requirements (待实现)
+
+### 功能目标
+
+用户上传一张图片（表示想去类似的地方），然后提供：
+- 目标城市
+- 现处位置
+
+系统自动推荐：
+1. **目标城市与图片相似的推荐景点** - 根据图片识别场景类型（海边、公园、湖畔等），在目标城市寻找类似景点
+2. **未来几天的天气情况**
+3. **交通工具推荐** - 从现处位置到景点的交通方式
+
+### 待完成事项 (Todo)
+
+- [x] 修复 flight_skill.py 参数名 (departure -> from_city, destination -> to_city)
+- [x] 修复 scenic_skill.py 参数名 (city + scenic -> scenic_name)
+- [x] 修复 main_agent.py 的 langchain 导入错误
+- [x] 更新测试用例参数
+- [x] 实现图片场景识别功能
+- [x] 实现景点相似度匹配逻辑
+- [x] 更新 main.py 交互流程
+- [x] 优化交通推荐逻辑（同城/跨城区分）
+- [x] 丰富景点推荐内容（详细描述、亮点、活动、贴士）
+
+### 待优化事项
+
+- [ ] 接入真实航班API（航旅纵横/飞常准）
+- [ ] 接入真实门票API
+- [ ] 增加缓存机制减少API调用
+- [ ] 完善单元测试覆盖（新增住宿、餐饮测试）
+
+### 已实现功能
+
+**景点相关**：
+- `recommend_scenic` - 景点推荐：根据场景类型推荐相似景点
+- `scenic_ticket` - 景点门票查询
+
+**天气交通**：
+- `weather_query` - 天气查询（7天预报）
+- `flight_search` - 航班查询
+
+**住宿推荐**：
+- `recommend_hotel` - 酒店推荐（豪华/舒适/经济）
+- `recommend_bnb` - 民宿推荐
+
+**美食推荐**：
+- `recommend_restaurant` - 餐厅推荐（按菜系）
+- `recommend_snacks` - 小吃推荐
+
+### 架构演进
+
+1. **LangChain Tool** - 原子化工具（当前阶段）
+2. **Sub-Agent** - 领域专家Agent（规划中）
+   - AccommodationAgent - 住宿领域
+   - FoodAgent - 餐饮领域
+   - TransportAgent - 交通领域

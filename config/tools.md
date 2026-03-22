@@ -67,3 +67,21 @@
   "required": ["scenic_name"]
 }
 ```
+
+## search_local_guide
+
+当用户询问关于某城市的特色景点、小众路线、本地美食或具体的旅游攻略详情时，必须调用此工具检索本地知识库。
+
+**参数：**
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "查询字符串，例如：'哈尔滨有哪些特色美食'、'中央大街附近有什么景点推荐'"
+    }
+  },
+  "required": ["query"]
+}
+```
