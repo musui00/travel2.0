@@ -1,8 +1,9 @@
 # ModelScope API 配置
+# 从环境变量读取，不要在此处硬编码敏感信息
 MODELSCOPE_BASE_URL: https://api-inference.modelscope.cn/v1
-MODELSCOPE_API_KEY: ms-d8f78ee8-d633-4d7e-a2ae-c7ebc5a8f1a2
+MODELSCOPE_API_KEY: ${MODELSCOPE_API_KEY}
 MODEL_NAME: moonshotai/Kimi-K2.5
 
-# 外部API配置 (示例)
-# WEATHER_API_KEY: your_weather_api_key
-# FLIGHT_API_KEY: your_flight_api_key
+# 外部API配置
+# WEATHER_API_KEY: ${WEATHER_API_KEY}
+# FLIGHT_API_KEY: ${FLIGHT_API_KEY}

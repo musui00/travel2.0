@@ -19,6 +19,9 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+__pycache__/
+*.py[cod]
+*$py.class
 
 # Virtual Environment
 venv/
@@ -50,3 +53,12 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Vector database (RAG)
+chroma_db/
+# datasets
+data/
+data_markdown/
+
+# Claude Code
+.claude/
