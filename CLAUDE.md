@@ -41,12 +41,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ├── .gitignore                 # Git忽略配置
 ├── .env.example               # 环境变量模板
 ├── requirements.txt            # 项目依赖
+├── init_db.py                 # RAG 向量库初始化脚本
+├── test_rag.py                # RAG 检索测试脚本
 ├── .github/
 │   └── workflows/
 │       └── ci.yml             # CI/CD 自动化测试
 ├── config/
 │   ├── config.yaml            # 全局配置
 │   └── tools.md              # 工具Schema定义
+├── data/                      # PDF 源文件（已废弃）
+├── data_markdown/             # MinerU 解析的 Markdown 文件
+│   └── 哈尔滨旅游攻略.md
+├── chroma_db/                 # PDF 向量库（已废弃）
+├── chroma_db_md/              # Markdown 向量库
 ├── src/
 │   ├── __init__.py
 │   ├── main.py                # 主入口
@@ -59,7 +66,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │   ├── prompts/                # Prompt模板管理
 │   │   └── main_agent_prompt.yaml
 │   └── utils/                 # 通用工具
-│       └── logger.py          # 日志收集器
+│       ├── logger.py          # 日志收集器
+│       └── rag_manager.py     # RAG 向量库管理
 └── tests/
     ├── unit/                  # 单元测试
     └── integration/            # 集成测试
@@ -67,9 +75,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-### 运行主程序
+### 安装依赖
 ```bash
 pip install -r requirements.txt
+```
+
+### RAG 向量库初始化
+```bash
+# 首次运行：加载 Markdown 并创建向量库
+python init_db.py
+
+# 测试 RAG 检索
+python test_rag.py
+```
+
+### 运行主程序
+```bash
 python src/main.py
 ```
 
@@ -123,18 +144,37 @@ Never hardcode prompt strings in Python files. If an Agent's behavior needs tuni
 
 ---
 
-## Project Requirements (待实现)
+## RAG 本地知识库
 
-### 功能目标
+### 技术栈
 
-用户上传一张图片（表示想去类似的地方），然后提供：
-- 目标城市
-- 现处位置
+- **文本切分**: `MarkdownHeaderTextSplitter` + `RecursiveCharacterTextSplitter`
+- **向量存储**: Chroma (持久化至 `./chroma_db_md`)
+- **Embedding**: M3E-Base (`moka-ai/m3e-base`)
+- **数据源**: MinerU 解析的 Markdown 文件 (`data_markdown/`)
 
-系统自动推荐：
-1. **目标城市与图片相似的推荐景点** - 根据图片识别场景类型（海边、公园、湖畔等），在目标城市寻找类似景点
-2. **未来几天的天气情况**
-3. **交通工具推荐** - 从现处位置到景点的交通方式
+### 切分策略
+
+1. **一级切分**: `MarkdownHeaderTextSplitter` 按 `#` `##` `###` 标题层级切分，保留章节 metadata
+2. **二级切分**: `RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=50)` 防止单块过长
+3. **数据清洗**: 删除 `![](...)` 图片链接，压缩多余换行
+
+### 使用方式
+
+```python
+from src.utils.rag_manager import RAGManager
+
+# 初始化（首次自动创建向量库）
+rag = RAGManager(markdown_path="data_markdown/哈尔滨旅游攻略.md")
+
+# 查询（返回内容 + 章节标题）
+result = rag.query("去哈尔滨旅游的最佳时间是什么时候？")
+print(result)
+```
+
+---
+
+## Project Requirements
 
 ### 待完成事项 (Todo)
 
@@ -180,3 +220,7 @@ Never hardcode prompt strings in Python files. If an Agent's behavior needs tuni
    - AccommodationAgent - 住宿领域
    - FoodAgent - 餐饮领域
    - TransportAgent - 交通领域
+3. **RAG 知识库** - 本地文档检索（已完成）
+   - 支持 Markdown 结构化切分
+   - 保留章节层级 metadata
+   - 支持向量相似度检索

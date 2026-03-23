@@ -1,111 +1,64 @@
-"""RAG Manager for local knowledge base retrieval using Parent Document Retriever."""
+"""RAG Manager for local knowledge base retrieval using structured Markdown."""
 
 import re
-import uuid
 from pathlib import Path
-from typing import List, Sequence
+from typing import List
 
-from langchain_community.document_loaders import PDFPlumberLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
-from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import run_in_executor
-from langchain_core.stores import InMemoryStore
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import (
+    MarkdownHeaderTextSplitter,
+    RecursiveCharacterTextSplitter,
+)
 
 from src.utils.logger import logger
 
 
+# 定义 Markdown 标题层级
+HEADERS_TO_SPLIT_ON = [
+    ("#", "Header 1"),
+    ("##", "Header 2"),
+    ("###", "Header 3"),
+]
+
+
 def clean_text(text: str) -> str:
-    """清洗 PDF 提取的文本，去除乱码和特殊字符."""
-    # 移除控制字符，保留中文、英文、数字、常用标点
+    """清洗 Markdown 文本，去除图片、多余空白."""
+    # 删除所有 Markdown 图片标签 ![...](...)
+    text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
+    # 将连续3个及以上换行替换为2个换行
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    # 移除控制字符
     text = re.sub(r'[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]', '', text)
-    # 替换多余的空白字符
-    text = re.sub(r'\s+', ' ', text)
     # 移除行首行尾空白
     text = text.strip()
     return text
 
 
-class ParentDocumentRetriever(BaseRetriever):
-    """Parent Document Retriever implementation.
-
-    Retrieves parent documents based on child chunk similarity search.
-    - Child chunks are stored in vectorstore for precise retrieval
-    - Parent documents are stored in docstore for complete context
-    """
-
-    vectorstore: Chroma
-    docstore: InMemoryStore
-    child_splitter: RecursiveCharacterTextSplitter
-    parent_splitter: RecursiveCharacterTextSplitter
-
-    def _get_relevant_documents(self, query: str) -> Sequence[Document]:
-        """Get relevant parent documents for the query.
-
-        Args:
-            query: The search query.
-
-        Returns:
-            List of relevant parent documents.
-        """
-        # Search child chunks in vectorstore
-        child_results = self.vectorstore.similarity_search(query, k=4)
-
-        # Get unique parent document IDs from child results
-        parent_ids = set()
-        parent_docs = []
-
-        for child_doc in child_results:
-            # Extract parent ID from child doc metadata
-            parent_id = child_doc.metadata.get("parent_id")
-            if parent_id and parent_id not in parent_ids:
-                parent_ids.add(parent_id)
-                # Fetch parent document from docstore
-                parent_content = self.docstore.mget([parent_id])
-                if parent_content and parent_content[0]:
-                    parent_docs.append(
-                        Document(
-                            page_content=parent_content[0],
-                            metadata=child_doc.metadata.copy(),
-                        )
-                    )
-
-        if not parent_docs:
-            # Fallback: return child results as-is if no parent found
-            logger.warning("No parent documents found, returning child chunks")
-            return child_results
-
-        return parent_docs
-
-    async def _aget_relevant_documents(self, query: str) -> Sequence[Document]:
-        """Async version of document retrieval."""
-        return await run_in_executor(None, self._get_relevant_documents, query)
-
-
 class RAGManager:
-    """Manages local PDF document loading, embedding, and retrieval.
+    """Manages Markdown document loading, embedding, and retrieval.
 
-    Uses Parent Document Retriever architecture:
-    - Child chunks (small) for precise retrieval
-    - Parent documents (large) for complete context
+    Uses MarkdownHeaderTextSplitter for structural retrieval:
+    - First split by headers (# ## ###) to preserve document structure
+    - Then split with RecursiveCharacterTextSplitter as safety net
+    - Stores in chroma_db_md directory
     """
 
     def __init__(
         self,
-        pdf_path: str = "data/我是驴友-哈尔滨旅游攻略.pdf",
-        persist_directory: str = "./chroma_db",
+        markdown_path: str = "data_markdown/guide.md",
+        persist_directory: str = "./chroma_db_md",
         embedding_model: str = "moka-ai/m3e-base",
     ) -> None:
         """Initialize the RAG Manager.
 
         Args:
-            pdf_path: Path to the PDF document.
+            markdown_path: Path to the Markdown document.
             persist_directory: Directory to persist the vector database.
             embedding_model: HuggingFace embedding model name.
         """
-        self.pdf_path = pdf_path
+        self.markdown_path = markdown_path
         self.persist_directory = persist_directory
         self.embedding_model = embedding_model
         self.embeddings = HuggingFaceEmbeddings(
@@ -113,71 +66,55 @@ class RAGManager:
             model_kwargs={"device": "cpu"},
         )
 
-        # Parent splitter: chunk_size=1200, chunk_overlap=0 for complete context
-        self.parent_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1200,
-            chunk_overlap=0,
-            length_function=len,
-            separators=["\n\n", "\n", "。", "！", "？", ".", "!", "?"],
+        # 按标题层级切分
+        self.header_splitter = MarkdownHeaderTextSplitter(
+            headers_to_split_on=HEADERS_TO_SPLIT_ON,
         )
 
-        # Child splitter: chunk_size=250, chunk_overlap=50 for precise retrieval
-        self.child_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=250,
+        # 二次切分：防止单块过长
+        self.backup_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=300,
             chunk_overlap=50,
             length_function=len,
             separators=["\n\n", "\n", "。", "！", "？", ".", "!", "?"],
         )
 
-        # Vector store for child chunks (persisted)
+        # 向量存储
         self.vectorstore: Chroma | None = None
 
-        # Store for parent documents (in-memory)
-        self.docstore: InMemoryStore | None = None
-
-        # Parent Document Retriever
-        self.retriever: ParentDocumentRetriever | None = None
-
-    def _load_pdf(self) -> List[Document]:
-        """Load PDF and clean text.
+    def _load_markdown(self) -> tuple[str, str]:
+        """加载 Markdown 文件.
 
         Returns:
-            List of loaded documents.
+            元组 (原始内容, 清洗后的内容).
         """
-        pdf_file = Path(self.pdf_path)
+        markdown_file = Path(self.markdown_path)
 
-        if not pdf_file.exists():
-            logger.error(f"PDF file not found: {self.pdf_path}")
+        if not markdown_file.exists():
+            logger.error(f"Markdown file not found: {self.markdown_path}")
             raise FileNotFoundError(
-                f"PDF file not found: {self.pdf_path}. "
-                "Please place the PDF file in the data directory."
+                f"Markdown file not found: {self.markdown_path}. "
+                "Please place the Markdown file in the data_markdown directory."
             )
 
         try:
-            logger.info(f"Loading PDF from: {self.pdf_path}")
-            loader = PDFPlumberLoader(str(pdf_file))
-            documents = loader.load()
-
-            # 清洗文本，去除乱码
-            for doc in documents:
-                doc.page_content = clean_text(doc.page_content)
-
-            logger.info(f"Loaded {len(documents)} pages from PDF")
-            return documents
-
+            logger.info(f"Loading Markdown from: {self.markdown_path}")
+            content = markdown_file.read_text(encoding="utf-8")
+            cleaned_content = clean_text(content)
+            logger.info(f"Loaded Markdown file ({len(cleaned_content)} chars after cleaning)")
+            return content, cleaned_content
         except Exception as e:
-            logger.error(f"Failed to load PDF: {e}")
+            logger.error(f"Failed to load Markdown: {e}")
             raise
 
     def _init_vectorstore(self) -> Chroma:
-        """Initialize or load the Chroma vector store.
+        """初始化或加载 Chroma 向量库.
 
         Returns:
-            Chroma vector store instance.
+            Chroma 向量库实例.
         """
         persist_path = Path(self.persist_directory)
 
-        # Check if vector store already exists
         if persist_path.exists():
             try:
                 logger.info(f"Loading existing vector store from: {self.persist_directory}")
@@ -185,7 +122,6 @@ class RAGManager:
                     persist_directory=self.persist_directory,
                     embedding_function=self.embeddings,
                 )
-                # Verify it's not empty
                 if vectorstore._collection.count() > 0:
                     logger.info(f"Loaded existing vector store with {vectorstore._collection.count()} chunks")
                     return vectorstore
@@ -194,7 +130,6 @@ class RAGManager:
             except Exception as e:
                 logger.warning(f"Failed to load existing vector store: {e}, recreating...")
 
-        # Create new vector store
         logger.info(f"Creating new vector store at: {self.persist_directory}")
         vectorstore = Chroma(
             persist_directory=self.persist_directory,
@@ -203,71 +138,60 @@ class RAGManager:
         return vectorstore
 
     def load_and_index(self) -> None:
-        """Load PDF and create vector store with Parent Document Retriever."""
+        """加载 Markdown 并创建向量库."""
         try:
-            # Step 1: Load PDF
-            documents = self._load_pdf()
+            # Step 1: 加载 Markdown（获取原始和清洗后的内容）
+            _, cleaned_content = self._load_markdown()
 
-            # Step 2: Split into parent documents (larger chunks for context)
-            logger.info("Splitting documents into parent chunks (size=1200)...")
-            parent_docs = self.parent_splitter.split_documents(documents)
-            logger.info(f"Created {len(parent_docs)} parent documents")
+            # Step 2: 按标题层级切分（保留 metadata）
+            logger.info("Splitting by Markdown headers...")
+            header_docs = self.header_splitter.split_text(cleaned_content)
+            logger.info(f"Created {len(header_docs)} header-based chunks")
 
-            # Step 3: Split parent docs into child chunks (smaller for precision)
-            logger.info("Splitting parent docs into child chunks (size=250)...")
-            child_docs = self.child_splitter.split_documents(parent_docs)
-            logger.info(f"Created {len(child_docs)} child chunks")
+            # Step 3: 二次切分（防止单块过长）
+            logger.info("Applying backup splitter (chunk_size=300, overlap=50)...")
+            final_docs: List[Document] = []
 
-            # Step 4: Initialize in-memory store for parent documents
-            self.docstore = InMemoryStore()
+            for doc in header_docs:
+                # 如果文档长度超过 300，进行二次切分
+                if len(doc.page_content) > 300:
+                    sub_docs = self.backup_splitter.split_documents([doc])
+                    # 保留原始 metadata（标题信息）
+                    for sub_doc in sub_docs:
+                        sub_doc.metadata.update(doc.metadata)
+                    final_docs.extend(sub_docs)
+                else:
+                    final_docs.append(doc)
 
-            # Step 5: Store parent documents in docstore with IDs
-            logger.info("Storing parent documents in docstore...")
-            parent_ids = []
-            for i, parent_doc in enumerate(parent_docs):
-                parent_id = f"parent_{i}"
-                parent_ids.append(parent_id)
-                parent_doc.metadata["parent_id"] = parent_id
-                self.docstore.mset([(parent_id, parent_doc.page_content)])
+            logger.info(f"Created {len(final_docs)} chunks after backup splitting")
 
-            # Step 6: Add parent_id to child docs metadata
-            for child_doc in child_docs:
-                # Find which parent this child belongs to
-                for i, parent_doc in enumerate(parent_docs):
-                    # Check if child is part of parent by content overlap
-                    if child_doc.page_content in parent_doc.page_content:
-                        child_doc.metadata["parent_id"] = f"parent_{i}"
-                        break
+            # 过滤空文档
+            final_docs = [doc for doc in final_docs if doc.page_content.strip()]
+            logger.info(f"After filtering empty docs: {len(final_docs)} chunks")
 
-            # Step 7: Initialize vector store for child chunks
+            if not final_docs:
+                raise ValueError("No valid documents to index")
+
+            # Step 4: 初始化向量库
             self.vectorstore = self._init_vectorstore()
 
-            # Step 8: Clear and repopulate vector store
-            logger.info("Adding child chunks to vector store...")
+            # Step 5: 清空并重新填充
+            logger.info("Adding chunks to vector store...")
             self.vectorstore.delete_collection()
             self.vectorstore = Chroma.from_documents(
-                documents=child_docs,
+                documents=final_docs,
                 embedding=self.embeddings,
                 persist_directory=self.persist_directory,
             )
 
-            # Step 9: Assemble ParentDocumentRetriever
-            logger.info("Assembling ParentDocumentRetriever...")
-            self.retriever = ParentDocumentRetriever(
-                vectorstore=self.vectorstore,
-                docstore=self.docstore,
-                child_splitter=self.child_splitter,
-                parent_splitter=self.parent_splitter,
-            )
-
-            logger.info("Parent Document Retriever initialized and persisted successfully")
+            logger.info("Markdown RAG initialized and persisted successfully")
 
         except Exception as e:
-            logger.error(f"Failed to load and index PDF: {e}")
+            logger.error(f"Failed to load and index Markdown: {e}")
             raise
 
     def load_existing(self) -> None:
-        """Load existing vector store and reconstruct retriever."""
+        """加载已存在的向量库."""
         persist_path = Path(self.persist_directory)
 
         if not persist_path.exists():
@@ -278,7 +202,6 @@ class RAGManager:
             )
 
         try:
-            # Load existing vector store
             logger.info(f"Loading existing vector store from: {self.persist_directory}")
             self.vectorstore = Chroma(
                 persist_directory=self.persist_directory,
@@ -286,71 +209,63 @@ class RAGManager:
             )
 
             count = self.vectorstore._collection.count()
-            logger.info(f"Loaded vector store with {count} child chunks")
-
-            # Initialize in-memory store for parent documents
-            # Need to re-split parent documents
-            self.docstore = InMemoryStore()
-
-            # Re-split and store parent documents
-            logger.info("Re-splitting parent documents for docstore...")
-            documents = self._load_pdf()
-            parent_docs = self.parent_splitter.split_documents(documents)
-
-            # Store parent documents in docstore with IDs
-            for i, parent_doc in enumerate(parent_docs):
-                parent_id = f"parent_{i}"
-                parent_doc.metadata["parent_id"] = parent_id
-                self.docstore.mset([(parent_id, parent_doc.page_content)])
-
-            # Reconstruct the retriever
-            logger.info("Reconstructing ParentDocumentRetriever...")
-            self.retriever = ParentDocumentRetriever(
-                vectorstore=self.vectorstore,
-                docstore=self.docstore,
-                child_splitter=self.child_splitter,
-                parent_splitter=self.parent_splitter,
-            )
-
-            logger.info("Existing retriever loaded successfully")
+            logger.info(f"Loaded vector store with {count} chunks")
 
         except Exception as e:
-            logger.error(f"Failed to load existing retriever: {e}")
+            logger.error(f"Failed to load existing vector store: {e}")
             raise
 
     def query(self, question: str, k: int = 3) -> str:
-        """Query the retriever for relevant text segments.
+        """查询向量库，返回相关内容.
 
         Args:
-            question: The query string.
-            k: Number of documents to retrieve (unused, kept for compatibility).
+            question: 查询字符串.
+            k: 返回结果数量.
 
         Returns:
-            Concatenated string of the relevant text segments.
+            格式化字符串，包含 page_content 和 metadata（章节标题）.
         """
-        if self.retriever is None:
-            # Try to load existing, if not found, create new
+        if self.vectorstore is None:
             try:
                 self.load_existing()
             except FileNotFoundError:
-                logger.info("No existing retriever found, creating new one...")
+                logger.info("No existing vector store found, creating new one...")
                 self.load_and_index()
 
         try:
             logger.info(f"Querying: {question}")
 
-            # Use the retriever to get relevant documents
-            results = self.retriever.invoke(question)
+            results = self.vectorstore.similarity_search(question, k=k)
 
             if not results:
                 logger.warning("No relevant documents found")
                 return "未找到相关内容"
 
-            # Extract content from results
-            relevant_texts = [doc.page_content for doc in results]
-            logger.info(f"Found {len(relevant_texts)} relevant segments")
+            logger.info(f"Found {len(results)} relevant segments")
 
-            return "\n\n---\n\n".join(relevant_texts)
+            # 格式化输出：包含内容 + 元信息（章节标题）
+            formatted_results: List[str] = []
+            for i, doc in enumerate(results, 1):
+                # 提取章节标题
+                headers = []
+                if doc.metadata.get("Header 1"):
+                    headers.append(doc.metadata["Header 1"])
+                if doc.metadata.get("Header 2"):
+                    headers.append(doc.metadata["Header 2"])
+                if doc.metadata.get("Header 3"):
+                    headers.append(doc.metadata["Header 3"])
+
+                header_str = " > ".join(headers) if headers else "无章节信息"
+
+                # 格式化
+                formatted = f"""【结果 {i}】
+章节: {header_str}
+
+内容:
+{doc.page_content}"""
+                formatted_results.append(formatted)
+
+            return "\n\n---\n\n".join(formatted_results)
 
         except Exception as e:
             logger.error(f"Query failed: {e}")

@@ -11,15 +11,15 @@ def test_rag() -> None:
     logger.info("=" * 50)
 
     # 创建 RAG 管理器
-    rag = RAGManager()
+    rag = RAGManager(markdown_path="data_markdown/哈尔滨旅游攻略.md")
 
-    # 加载 PDF 并创建向量库（首次运行）
-    logger.info("[1] 加载 PDF 并创建向量库...")
+    # 加载 Markdown 并创建向量库（首次运行）
+    logger.info("[1] 加载 Markdown 并创建向量库...")
     try:
         rag.load_and_index()
         logger.info("向量库创建成功")
     except FileNotFoundError as e:
-        logger.error(f"PDF 文件不存在: {e}")
+        logger.error(f"Markdown 文件不存在: {e}")
         return
     except Exception as e:
         logger.error(f"加载失败: {e}")
