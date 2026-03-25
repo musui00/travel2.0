@@ -30,17 +30,17 @@ def call_modelScope_api(content: str) -> str:
 
     headers = {
         "Authorization": f"Bearer {os.getenv('MODELSCOPE_API_KEY')}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
     payload = {
         "model": os.getenv("MODEL_NAME", "moonshotai/Kimi-K2.5"),
         "messages": [
             {"role": "system", "content": prompt},
-            {"role": "user", "content": content}
+            {"role": "user", "content": content},
         ],
         "temperature": 0.3,
-        "max_tokens": 8192
+        "max_tokens": 8192,
     }
 
     response = requests.post(url, headers=headers, json=payload, timeout=180)
