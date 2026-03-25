@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 @dataclass
 class PluginMetadata:
     """插件元数据"""
+
     name: str
     version: str = "1.0.0"
     description: str = ""

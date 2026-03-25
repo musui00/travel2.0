@@ -26,11 +26,11 @@ HEADERS_TO_SPLIT_ON = [
 def clean_text(text: str) -> str:
     """清洗 Markdown 文本，去除图片、多余空白."""
     # 删除所有 Markdown 图片标签 ![...](...)
-    text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
+    text = re.sub(r"!\[.*?\]\(.*?\)", "", text)
     # 将连续3个及以上换行替换为2个换行
-    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
     # 移除控制字符
-    text = re.sub(r'[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]', '', text)
+    text = re.sub(r"[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]", "", text)
     # 移除行首行尾空白
     text = text.strip()
     return text
@@ -101,7 +101,9 @@ class RAGManager:
             logger.info(f"Loading Markdown from: {self.markdown_path}")
             content = markdown_file.read_text(encoding="utf-8")
             cleaned_content = clean_text(content)
-            logger.info(f"Loaded Markdown file ({len(cleaned_content)} chars after cleaning)")
+            logger.info(
+                f"Loaded Markdown file ({len(cleaned_content)} chars after cleaning)"
+            )
             return content, cleaned_content
         except Exception as e:
             logger.error(f"Failed to load Markdown: {e}")
@@ -117,18 +119,24 @@ class RAGManager:
 
         if persist_path.exists():
             try:
-                logger.info(f"Loading existing vector store from: {self.persist_directory}")
+                logger.info(
+                    f"Loading existing vector store from: {self.persist_directory}"
+                )
                 vectorstore = Chroma(
                     persist_directory=self.persist_directory,
                     embedding_function=self.embeddings,
                 )
                 if vectorstore._collection.count() > 0:
-                    logger.info(f"Loaded existing vector store with {vectorstore._collection.count()} chunks")
+                    logger.info(
+                        f"Loaded existing vector store with {vectorstore._collection.count()} chunks"
+                    )
                     return vectorstore
                 else:
                     logger.info("Existing vector store is empty, recreating...")
             except Exception as e:
-                logger.warning(f"Failed to load existing vector store: {e}, recreating...")
+                logger.warning(
+                    f"Failed to load existing vector store: {e}, recreating..."
+                )
 
         logger.info(f"Creating new vector store at: {self.persist_directory}")
         vectorstore = Chroma(

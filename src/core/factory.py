@@ -20,7 +20,9 @@ class AgentFactory:
         cls._agents[agent_type] = agent_class
 
     @classmethod
-    def create(cls, agent_type: str, llm: Any, config: Optional[Dict[str, Any]] = None) -> Any:
+    def create(
+        cls, agent_type: str, llm: Any, config: Optional[Dict[str, Any]] = None
+    ) -> Any:
         """创建 Agent 实例"""
         if agent_type not in cls._agents:
             raise ValueError(f"未知的 Agent 类型: {agent_type}")
@@ -38,6 +40,7 @@ def register_default_agents():
     """注册默认的 Agent"""
     try:
         from src.agents.main_agent import MainAgent
+
         AgentFactory.register("main", MainAgent)
     except ImportError:
         pass

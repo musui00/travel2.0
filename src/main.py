@@ -26,8 +26,12 @@ def load_config():
         config = yaml.safe_load(f)
 
     # 环境变量优先级高于配置文件
-    config["MODELSCOPE_API_KEY"] = os.getenv("MODELSCOPE_API_KEY", config.get("MODELSCOPE_API_KEY"))
-    config["WEATHER_API_KEY"] = os.getenv("WEATHER_API_KEY", config.get("WEATHER_API_KEY"))
+    config["MODELSCOPE_API_KEY"] = os.getenv(
+        "MODELSCOPE_API_KEY", config.get("MODELSCOPE_API_KEY")
+    )
+    config["WEATHER_API_KEY"] = os.getenv(
+        "WEATHER_API_KEY", config.get("WEATHER_API_KEY")
+    )
     config["FLIGHT_API_KEY"] = os.getenv("FLIGHT_API_KEY", config.get("FLIGHT_API_KEY"))
 
     return config
@@ -137,7 +141,9 @@ def recommend_transport(from_city: str, to_city: str) -> str:
 
     # 航班
     try:
-        flight_result = test_tool("flight_search", {"from_city": from_city, "to_city": to_city})
+        flight_result = test_tool(
+            "flight_search", {"from_city": from_city, "to_city": to_city}
+        )
         result += "✈️ 航班信息：\n"
         # 取前2个航班
         lines = flight_result.split("\n")
@@ -175,11 +181,14 @@ def main():
     config = load_config()
 
     # 检查 API Key
-    if not config.get("MODELSCOPE_API_KEY") or config.get("MODELSCOPE_API_KEY") == "your_modelScope_api_key_here":
+    if (
+        not config.get("MODELSCOPE_API_KEY")
+        or config.get("MODELSCOPE_API_KEY") == "your_modelScope_api_key_here"
+    ):
         print("⚠️ 请在 .env 文件中配置 MODELSCOPE_API_KEY")
         print("或者直接使用离线模式（跳过图片分析）")
         use_offline = input("是否使用离线模式？(y/n): ").strip().lower()
-        if use_offline != 'y':
+        if use_offline != "y":
             return
 
     # 1. 获取图片路径

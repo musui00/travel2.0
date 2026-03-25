@@ -60,7 +60,7 @@ class TestWeatherSkill:
         # 可以通过查看源码或模拟调用来验证
         # 这里简单验证 tool 存在且可调用
         assert weather_query is not None
-        assert hasattr(weather_query, 'invoke')
+        assert hasattr(weather_query, "invoke")
 
     def test_weather_query_schema(self):
         """测试天气 Skill 的 Schema"""
@@ -107,10 +107,7 @@ class TestFlightSkill:
         """测试航班搜索"""
         from src.skills.flight_skill import flight_search
 
-        result = flight_search.invoke({
-            "from_city": "北京",
-            "to_city": "上海"
-        })
+        result = flight_search.invoke({"from_city": "北京", "to_city": "上海"})
         assert result is not None
 
 

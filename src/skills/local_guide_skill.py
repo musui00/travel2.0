@@ -63,7 +63,4 @@ def search_local_guide(query: str) -> str:
 
     except Exception as e:
         logger.error(f"本地知识库检索失败: {e}")
-        return (
-            "抱歉，检索本地知识库时发生错误。"
-            "请稍后再试或换个问题。"
-        )
+        return "抱歉，检索本地知识库时发生错误。" "请稍后再试或换个问题。"

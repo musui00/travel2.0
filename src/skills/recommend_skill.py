@@ -27,19 +27,19 @@ SCENIC_DETAILS = {
             "description": "中国现存规模最大的皇家园林，昆明湖水面宽阔，与万寿山交相辉映",
             "highlights": ["十七孔桥", "长廊", "万寿山", "佛香阁"],
             "activities": ["环湖骑行", "游船观光", "赏荷", "晨练"],
-            "tips": "建议游玩3-4小时，可乘坐游船环湖"
+            "tips": "建议游玩3-4小时，可乘坐游船环湖",
         },
         "什刹海": {
             "description": "北京城内面积最大、风貌保存最完整的历史街区，包含前海、后海、西海",
             "highlights": ["恭王府", "银锭桥", "胡同游", "酒吧街"],
             "activities": ["胡同骑行", "划船", "品茶", "夜游"],
-            "tips": "傍晚时分景色最美，可体验老北京胡同文化"
+            "tips": "傍晚时分景色最美，可体验老北京胡同文化",
         },
         "北海公园": {
             "description": "中国现存最古老、最完整的皇家园林之一，以'琼华岛'为中心",
             "highlights": ["白塔", "琼华岛", "五龙亭", "九龙壁"],
             "activities": ["游湖", "赏花", "登白塔", "品茶"],
-            "tips": "春季赏花最佳，夏季可避暑"
+            "tips": "春季赏花最佳，夏季可避暑",
         },
     },
     "上海": {
@@ -47,25 +47,25 @@ SCENIC_DETAILS = {
             "description": "人工挖掘的圆形湖泊，位于上海自贸区临港新片区，环境优美",
             "highlights": ["彩虹桥", "观海公园", "南汇嘴", "海昌海洋公园"],
             "activities": ["环湖骑行", "放风筝", "观海", "拍照"],
-            "tips": "适合周末自驾游，带上野餐垫享受悠闲时光"
+            "tips": "适合周末自驾游，带上野餐垫享受悠闲时光",
         },
         "淀山湖": {
             "description": "上海最大的淡水湖泊，被誉为'东方日内瓦湖'，风景秀丽",
             "highlights": ["朱家角古镇", "水上运动基地", "彩虹桥"],
             "activities": ["游船", "垂钓", "骑行", "露营"],
-            "tips": "可连同朱家角古镇一起游玩，建议安排半天"
+            "tips": "可连同朱家角古镇一起游玩，建议安排半天",
         },
         "东方绿舟": {
             "description": "集休闲、运动、教育为一体的综合性公园，拥有大片绿地和湖泊",
             "highlights": ["大草坪", "智慧大道", "潜艇展示", "拓展基地"],
             "activities": ["野餐", "骑行", "拓展训练", "参观潜艇"],
-            "tips": "适合亲子活动，有丰富的户外设施"
+            "tips": "适合亲子活动，有丰富的户外设施",
         },
         "世纪公园": {
             "description": "上海最大的生态公园，拥有大面积湖泊和花卉",
             "highlights": ["镜天湖", "音乐喷泉", "蒙特利尔园", "春园"],
             "activities": ["赏花", "划船", "野餐", "跑步"],
-            "tips": "春季郁金香展非常美，适合拍照"
+            "tips": "春季郁金香展非常美，适合拍照",
         },
     },
     "杭州": {
@@ -73,19 +73,19 @@ SCENIC_DETAILS = {
             "description": "世界文化遗产，中国著名的风景名胜区，以'欲把西湖比西子'闻名",
             "highlights": ["苏堤春晓", "断桥残雪", "雷峰夕照", "三潭印月"],
             "activities": ["环湖骑行", "游船", "赏荷", "品茶"],
-            "tips": "建议清晨或傍晚游览，可避开人流"
+            "tips": "建议清晨或傍晚游览，可避开人流",
         },
         "西溪湿地": {
             "description": "国内首个国家湿地公园，被誉为'城市绿肺'",
             "highlights": ["周家村", "烟水渔庄", "深潭口", "茭芦田庄"],
             "activities": ["摇橹船", "观鸟", "赏芦苇", "汉服体验"],
-            "tips": "四季皆宜，尤以秋冬季芦苇最美"
+            "tips": "四季皆宜，尤以秋冬季芦苇最美",
         },
         "千岛湖": {
             "description": "人工湖，拥有1078个岛屿，是长三角地区重要的休闲胜地",
             "highlights": ["梅峰岛", "月光岛", "东南湖区", "森林氧吧"],
             "activities": ["游船", "骑行", "垂钓", "品鱼头"],
-            "tips": "建议自驾环湖，品尝当地特色鱼头汤"
+            "tips": "建议自驾环湖，品尝当地特色鱼头汤",
         },
     },
     "厦门": {
@@ -93,19 +93,19 @@ SCENIC_DETAILS = {
             "description": "世界文化遗产，'钢琴之岛'，拥有众多中西合璧的建筑",
             "highlights": ["日光岩", "菽庄花园", "钢琴博物馆", "龙头路"],
             "activities": ["漫步", "品咖啡", "观建筑", "听钢琴"],
-            "tips": "建议清晨或傍晚上岛，避免人流高峰"
+            "tips": "建议清晨或傍晚上岛，避免人流高峰",
         },
         "环岛路": {
             "description": "厦门最美的海滨公路，沿途风景如画",
             "highlights": ["厦大白城", "珍珠湾", "曾厝垵", "黄厝海滨"],
             "activities": ["骑行", "跑步", "看海", "拍照"],
-            "tips": "租一辆自行车沿环岛路骑行，感受海风"
+            "tips": "租一辆自行车沿环岛路骑行，感受海风",
         },
         "黄厝海滩": {
             "description": "厦门最干净的海滩之一，沙质细腻，海水清澈",
             "highlights": ["海滨木栈道", "椰风寨", "音乐广场"],
             "activities": ["看日出", "游泳", "拍照", "烧烤"],
-            "tips": "日出时分景色绝佳，是厦门看日出的最佳地点"
+            "tips": "日出时分景色绝佳，是厦门看日出的最佳地点",
         },
     },
 }
@@ -242,7 +242,9 @@ def recommend_scenic(scene_type: str, target_city: str) -> str:
         return f"抱歉，在 {target_city} 未找到适合 {scene_type} 类型的景点。建议尝试：海滩、湖泊、公园、山景、古镇、寺庙、游乐场"
 
     # 构建详细推荐结果
-    result = f"🌟 根据您喜欢的【{scene_type}】风格，为您在 {target_city} 推荐以下景点：\n\n"
+    result = (
+        f"🌟 根据您喜欢的【{scene_type}】风格，为您在 {target_city} 推荐以下景点：\n\n"
+    )
     result += f"{'='*50}\n\n"
 
     for i, scenic in enumerate(scenics[:3], 1):  # 限制推荐3个
@@ -255,21 +257,21 @@ def recommend_scenic(scene_type: str, target_city: str) -> str:
         if details:
             result += f"   📝 景点描述：\n   {details.get('description', '暂无')}\n\n"
 
-            highlights = details.get('highlights', [])
+            highlights = details.get("highlights", [])
             if highlights:
                 result += f"   ⭐ 特色亮点：\n"
                 for h in highlights:
                     result += f"      • {h}\n"
                 result += "\n"
 
-            activities = details.get('activities', [])
+            activities = details.get("activities", [])
             if activities:
                 result += f"   🎯 推荐活动：\n"
                 for a in activities:
                     result += f"      ✓ {a}\n"
                 result += "\n"
 
-            tips = details.get('tips', '')
+            tips = details.get("tips", "")
             if tips:
                 result += f"   💡 游玩小贴士：{tips}\n"
 
@@ -309,7 +311,10 @@ def _find_similar_types(scene_type: str) -> List[str]:
     scene_lower = scene_type.lower()
 
     for std_type in SCENIC_TYPES:
-        if scene_lower in SCENIC_TYPES[std_type] or scene_type in SCENIC_TYPES[std_type]:
+        if (
+            scene_lower in SCENIC_TYPES[std_type]
+            or scene_type in SCENIC_TYPES[std_type]
+        ):
             similar.append(std_type)
 
     return similar

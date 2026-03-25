@@ -47,6 +47,7 @@ class TestLocalGuideSkill:
     def test_search_local_guide_file_not_found(self, mock_get_rag_manager):
         """测试文件不存在场景"""
         from pathlib import Path
+
         mock_get_rag_manager.side_effect = FileNotFoundError(
             "PDF file not found: data/我是驴友-哈尔滨旅游攻略.pdf"
         )

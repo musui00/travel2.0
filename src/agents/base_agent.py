@@ -13,6 +13,7 @@ from src.skills import get_all_tools
 @dataclass
 class AgentConfig:
     """Agent 配置"""
+
     name: str
     description: str = ""
     max_iterations: int = 10

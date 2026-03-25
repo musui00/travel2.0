@@ -11,6 +11,7 @@ from dataclasses import dataclass
 @dataclass
 class SubAgentConfig:
     """Sub-Agent 配置"""
+
     name: str
     description: str = ""
     max_tokens: int = 2000
@@ -57,9 +58,7 @@ class SubAgent(ABC):
         from langchain_core.messages import HumanMessage
 
         try:
-            response = self.llm.invoke([
-                HumanMessage(content=prompt)
-            ])
+            response = self.llm.invoke([HumanMessage(content=prompt)])
             return response.content
         except Exception as e:
             return f"处理失败: {str(e)}"

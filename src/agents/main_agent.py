@@ -57,7 +57,9 @@ class MainAgent:
             response = self.llm_with_tools.invoke(messages)
 
             # 检查是否有函数调用
-            if hasattr(response, "additional_kwargs") and response.additional_kwargs.get("function_call"):
+            if hasattr(
+                response, "additional_kwargs"
+            ) and response.additional_kwargs.get("function_call"):
                 # 处理函数调用
                 function_call = response.additional_kwargs["function_call"]
                 function_name = function_call["name"]
@@ -69,7 +71,9 @@ class MainAgent:
                     result = tool.invoke(arguments)
                     # 再次调用 LLM 处理结果
                     messages.append(response)
-                    messages.append(HumanMessage(content=f"工具 {function_name} 返回结果: {result}"))
+                    messages.append(
+                        HumanMessage(content=f"工具 {function_name} 返回结果: {result}")
+                    )
                     final_response = self.llm.invoke(messages)
                     return final_response.content
                 else:

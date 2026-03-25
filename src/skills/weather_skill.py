@@ -28,9 +28,7 @@ def query_weather(city: str) -> dict:
         天气数据字典
     """
     url = f"{WEATHER_API_URL}/{city}"
-    params = {
-        "format": "j1"
-    }
+    params = {"format": "j1"}
 
     try:
         response = requests.get(url, params=params, timeout=10)

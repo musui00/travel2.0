@@ -47,10 +47,12 @@ def clean_registry():
 @pytest.fixture
 def sample_llm():
     """模拟 LLM（用于测试）"""
+
     class MockLLM:
         def invoke(self, messages):
             class MockResponse:
                 content = "Mock response"
+
             return MockResponse()
 
     return MockLLM()
@@ -60,6 +62,7 @@ def sample_llm():
 def weather_skill():
     """获取天气 Skill"""
     from src.skills.weather_skill import weather_query
+
     return weather_query
 
 
@@ -67,6 +70,7 @@ def weather_skill():
 def flight_skill():
     """获取航班 Skill"""
     from src.skills.flight_skill import flight_search
+
     return flight_skill
 
 
@@ -74,6 +78,7 @@ def flight_skill():
 def scenic_skill():
     """获取景点 Skill"""
     from src.skills.scenic_skill import scenic_ticket
+
     return scenic_ticket
 
 
@@ -81,4 +86,5 @@ def scenic_skill():
 def all_tools():
     """获取所有 Tools"""
     from src.skills import get_all_tools
+
     return get_all_tools()
