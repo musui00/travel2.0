@@ -47,7 +47,7 @@ class RAGManager:
 
     def __init__(
         self,
-        markdown_path: str = "data_markdown/guide.md",
+        markdown_path: str = "data_markdown/guide_structured.md",
         persist_directory: str = "./chroma_db_md",
         embedding_model: str = "moka-ai/m3e-base",
     ) -> None:

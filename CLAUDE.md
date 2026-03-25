@@ -43,6 +43,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ├── requirements.txt            # 项目依赖
 ├── init_db.py                 # RAG 向量库初始化脚本
 ├── test_rag.py                # RAG 检索测试脚本
+├── scripts/                   # 工具脚本
+│   └── format_markdown.py     # Markdown 层级格式化脚本
 ├── .github/
 │   └── workflows/
 │       └── ci.yml             # CI/CD 自动化测试
@@ -51,7 +53,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │   └── tools.md              # 工具Schema定义
 ├── data/                      # PDF 源文件（已废弃）
 ├── data_markdown/             # MinerU 解析的 Markdown 文件
-│   └── 哈尔滨旅游攻略.md
+│   ├── 哈尔滨旅游攻略.md       # 原始扁平化标题
+│   └── guide_structured.md    # 大模型重构后的多级标题
 ├── chroma_db/                 # PDF 向量库（已废弃）
 ├── chroma_db_md/              # Markdown 向量库
 ├── src/
@@ -82,7 +85,10 @@ pip install -r requirements.txt
 
 ### RAG 向量库初始化
 ```bash
-# 首次运行：加载 Markdown 并创建向量库
+# 步骤1：使用大模型重构 Markdown 标题层级（扁平化 # → 多级 ##/###）
+python scripts/format_markdown.py
+
+# 步骤2：加载重构后的 Markdown 并创建向量库
 python init_db.py
 
 # 测试 RAG 检索
@@ -164,10 +170,10 @@ Never hardcode prompt strings in Python files. If an Agent's behavior needs tuni
 ```python
 from src.utils.rag_manager import RAGManager
 
-# 初始化（首次自动创建向量库）
-rag = RAGManager(markdown_path="data_markdown/哈尔滨旅游攻略.md")
+# 初始化（使用重构后的层级化 Markdown）
+rag = RAGManager(markdown_path="data_markdown/guide_structured.md")
 
-# 查询（返回内容 + 章节标题）
+# 查询（返回内容 + 章节标题层级）
 result = rag.query("去哈尔滨旅游的最佳时间是什么时候？")
 print(result)
 ```
