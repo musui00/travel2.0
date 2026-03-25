@@ -130,6 +130,21 @@ When generating or modifying code in this repository, you MUST adhere to the fol
 
 6. **Code Formatting**: Use `black` for code formatting. Run `black src/ tests/` before committing. The project includes `pyproject.toml` configured for black.
 
+7. **Observability**: 
+   - Every Agent interaction MUST be traced. 
+   - Use `langchain.callbacks` to log token usage and latency for cost control.
+
+8. **Security**: 
+   - No PII (Personally Identifiable Information) should be sent to the LLM without anonymization.
+   - Secrets must NEVER be committed. Use the provided `config/config.yaml` which loads from sanitized env vars.
+
+9. **Testing Thresholds**: 
+   - New Tools MUST reach >80% code coverage.
+   - Agent evaluation (via `evaluate_agent.py`) must pass the baseline accuracy (e.g., >90% on golden dataset) before merging to `main`.
+
+10. **Schema Evolution**:
+    - Tool schemas in `config/tools.md` and Pydantic models MUST remain backward compatible to prevent breaking existing RAG indexes or cached responses.
+
 ## Development Workflows
 
 ### Adding a New Tool
