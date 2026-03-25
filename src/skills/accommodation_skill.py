@@ -7,7 +7,6 @@
 from typing import Dict, List
 from langchain_core.tools import tool
 
-
 # 酒店数据库
 HOTEL_DATABASE = {
     "上海": {

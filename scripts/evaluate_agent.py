@@ -20,7 +20,6 @@ load_dotenv()
 from src.agents.main_agent import MainAgent
 from src.utils.logger import logger
 
-
 # 测试集定义
 TEST_CASES = [
     {

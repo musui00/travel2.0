@@ -7,7 +7,6 @@
 from typing import Dict, List
 from langchain_core.tools import tool
 
-
 # 美食数据库
 FOOD_DATABASE = {
     "上海": {

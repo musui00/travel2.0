@@ -7,7 +7,6 @@
 from typing import Dict, List
 from langchain_core.tools import tool
 
-
 # 景点类型映射
 SCENIC_TYPES = {
     "海滩": ["海边", "沙滩", "海滨", "海岸", "海湾"],
