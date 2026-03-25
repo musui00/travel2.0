@@ -3,13 +3,12 @@
 单例模式管理所有插件的注册和获取
 """
 
-import os
 import importlib
 import inspect
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 
-from src.core.plugin import Plugin, PluginMetadata
+from src.core.plugin import Plugin
 
 
 class PluginRegistry:

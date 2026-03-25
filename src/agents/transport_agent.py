@@ -63,7 +63,7 @@ class TransportAgent:
         #     additional_info.append(f"天气情况：{weather_result}")
 
         if additional_info:
-            prompt += f"\n\n实时信息：\n" + "\n".join(additional_info)
+            prompt += "\n\n实时信息：\n" + "\n".join(additional_info)
 
         response = self.client.chat.completions.create(
             model=self.model,

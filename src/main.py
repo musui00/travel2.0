@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # 加载环境变量
 load_dotenv()
 
-from src.skills import get_all_tools, test_tool
+from src.skills import test_tool
 from src.utils.logger import logger
 
 

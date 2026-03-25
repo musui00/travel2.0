@@ -3,7 +3,6 @@
 负责理解用户意图，调用工具，生成旅游规划
 """
 
-from typing import Dict, Any, List
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langchain_core.utils.function_calling import convert_to_openai_function
@@ -51,31 +50,6 @@ class MainAgent:
             input_text = f"图片分析结果：{image_analysis}\n\n用户需求：{user_input}"
         else:
             input_text = user_input
-
-        # 系统提示词
-        system_message = """你是一个智能旅游规划助手。你的职责是：
-
-1. **理解用户需求**：分析用户的旅游需求
-2. **调用工具**：使用可用的工具查询信息
-3. **生成规划**：根据查询结果生成完整的旅游规划
-
-## 可用工具：
-- weather_query：查询城市天气
-- flight_search：查询航班信息
-- scenic_ticket：查询景点门票信息
-- recommend_scenic：根据场景类型推荐相似景点
-- recommend_hotel：推荐酒店
-- recommend_bnb：推荐民宿
-- recommend_restaurant：推荐餐厅
-- recommend_snacks：推荐小吃
-- search_local_guide：检索本地知识库（当用户询问具体城市攻略、本地美食、景点详情时使用）
-
-## 工作流程：
-1. 接收用户需求（可能包含图片分析结果）
-2. 根据需要调用相关工具获取信息
-3. 整合所有信息，生成完整的旅游规划
-
-请用中文回复，确保规划详细、实用。"""
 
         # 执行 LLM
         try:

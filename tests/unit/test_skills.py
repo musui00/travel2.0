@@ -19,7 +19,7 @@ class TestSkills:
         from src.skills import get_all_tools, list_tool_names
 
         tools = get_all_tools()
-        assert len(tools) == 8
+        assert len(tools) == 9
 
         names = list_tool_names()
         assert "weather_query" in names
