@@ -41,10 +41,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ├── .gitignore                 # Git忽略配置
 ├── .env.example               # 环境变量模板
 ├── requirements.txt            # 项目依赖
+├── pyproject.toml             # black 代码格式化配置
 ├── init_db.py                 # RAG 向量库初始化脚本
 ├── test_rag.py                # RAG 检索测试脚本
 ├── scripts/                   # 工具脚本
-│   └── format_markdown.py     # Markdown 层级格式化脚本
+│   ├── format_markdown.py     # Markdown 层级格式化脚本
+│   └── evaluate_agent.py      # Agent 评测流水线脚本
 ├── .github/
 │   └── workflows/
 │       └── ci.yml             # CI/CD 自动化测试
@@ -105,6 +107,11 @@ python src/main.py
 pytest tests/unit/ -v
 ```
 
+### 运行 Agent 评测
+```bash
+python scripts/evaluate_agent.py
+```
+
 ---
 
 ## Coding Conventions (For Claude)
@@ -120,6 +127,8 @@ When generating or modifying code in this repository, you MUST adhere to the fol
 4. **Logging**: Never use `print()`. Always use the custom logger: `from src.utils.logger import logger`. Log API calls at the `INFO` level and errors at the `ERROR` level.
 
 5. **Error Handling**: Network calls inside Tools must include `try-except` blocks and return a structured fallback response rather than throwing raw exceptions that crash the Agent.
+
+6. **Code Formatting**: Use `black` for code formatting. Run `black src/ tests/` before committing. The project includes `pyproject.toml` configured for black.
 
 ## Development Workflows
 
