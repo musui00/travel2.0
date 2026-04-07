@@ -11,7 +11,6 @@ from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, System
 from langchain_core.tools import tool
 from src.utils.logger import logger
 
-
 # 定义可路由的 Agent 列表
 AGENT_NAMES = ["TransportAgent", "AccommodationAgent", "FoodAgent", "SightseeingAgent"]
 
@@ -26,6 +25,7 @@ MAX_MODEL_RETRIES = 2  # 连续失败2次后切换模型
 # FIX-1: 自定义异常类型
 class RateLimitError(Exception):
     """限流异常 - choices=null 或 HTTP 429"""
+
     pass
 
 
@@ -169,20 +169,28 @@ class Supervisor:
                 if response is None:
                     # FIX-4: choices=null 返回 None，需要检查响应内容
                     last_error = "LLM 返回 None 响应（可能是限流导致的 choices=null）"
-                    logger.error(f"[Supervisor] {last_error}, retry_count={retry_count}")
+                    logger.error(
+                        f"[Supervisor] {last_error}, retry_count={retry_count}"
+                    )
                     retry_count += 1
                     # FIX-1: 使用指数退避
-                    delay = EXPONENTIAL_BACKOFF_DELAYS[min(retry_count - 1, len(EXPONENTIAL_BACKOFF_DELAYS) - 1)]
+                    delay = EXPONENTIAL_BACKOFF_DELAYS[
+                        min(retry_count - 1, len(EXPONENTIAL_BACKOFF_DELAYS) - 1)
+                    ]
                     time.sleep(delay)
                     is_rate_limit_error = True  # FIX-4: 归类为限流错误
                     continue
 
                 # FIX-4: 检查 response 对象是否有 choices 字段（某些 API 返回空 choices）
-                if hasattr(response, 'choices') and not response.choices:
+                if hasattr(response, "choices") and not response.choices:
                     last_error = "LLM 返回 choices=[]（限流导致的畸形响应）"
-                    logger.error(f"[Supervisor] {last_error}, retry_count={retry_count}")
+                    logger.error(
+                        f"[Supervisor] {last_error}, retry_count={retry_count}"
+                    )
                     retry_count += 1
-                    delay = EXPONENTIAL_BACKOFF_DELAYS[min(retry_count - 1, len(EXPONENTIAL_BACKOFF_DELAYS) - 1)]
+                    delay = EXPONENTIAL_BACKOFF_DELAYS[
+                        min(retry_count - 1, len(EXPONENTIAL_BACKOFF_DELAYS) - 1)
+                    ]
                     time.sleep(delay)
                     is_rate_limit_error = True
                     continue
@@ -198,11 +206,10 @@ class Supervisor:
                             arguments = json.dumps(tool_args)
                         else:
                             arguments = tool_args
-                        function_call = {
-                            "name": tool_name,
-                            "arguments": arguments
-                        }
-                elif hasattr(response, "additional_kwargs") and response.additional_kwargs.get("function_call"):
+                        function_call = {"name": tool_name, "arguments": arguments}
+                elif hasattr(
+                    response, "additional_kwargs"
+                ) and response.additional_kwargs.get("function_call"):
                     function_call = response.additional_kwargs["function_call"]
 
                 if function_call:
@@ -221,7 +228,11 @@ class Supervisor:
 
                         messages = list(messages)
                         messages.append(AIMessage(content=f"[调用工具 {tool_name}]"))
-                        messages.append(HumanMessage(content=f"工具 {tool_name} 返回: {tool_result}"))
+                        messages.append(
+                            HumanMessage(
+                                content=f"工具 {tool_name} 返回: {tool_result}"
+                            )
+                        )
 
                         # 解析路由决策
                         if tool_name == "route_to_agent":
@@ -246,7 +257,9 @@ class Supervisor:
                         logger.error(f"[Supervisor] {last_error}")
                         retry_count += 1
                         # FIX-1: 使用指数退避
-                        delay = EXPONENTIAL_BACKOFF_DELAYS[min(retry_count - 1, len(EXPONENTIAL_BACKOFF_DELAYS) - 1)]
+                        delay = EXPONENTIAL_BACKOFF_DELAYS[
+                            min(retry_count - 1, len(EXPONENTIAL_BACKOFF_DELAYS) - 1)
+                        ]
                         time.sleep(delay)
                         is_rate_limit_error = True
                         continue
@@ -255,7 +268,11 @@ class Supervisor:
                     next_agent, reason = self._intelligent_routing(travel_plan, visited)
 
                     messages = list(messages)
-                    messages.append(AIMessage(content=f"[Supervisor 路由决策] {reason} -> {next_agent}"))
+                    messages.append(
+                        AIMessage(
+                            content=f"[Supervisor 路由决策] {reason} -> {next_agent}"
+                        )
+                    )
 
                 new_travel_plan = dict(travel_plan)
                 break  # 成功跳出重试循环
@@ -266,21 +283,36 @@ class Supervisor:
                 error_str = str(e).lower()
 
                 # FIX-4: 判断是否为限流错误（优先检测）
-                if "null value for 'choices'" in last_error or "choices is none" in error_str:
+                if (
+                    "null value for 'choices'" in last_error
+                    or "choices is none" in error_str
+                ):
                     # FIX-4: choices=null 是限流导致的畸形响应，归类为 RateLimitError
-                    logger.error(f"[Supervisor] Rate Limit (choices=null): {last_error}, retry_count={retry_count}")
+                    logger.error(
+                        f"[Supervisor] Rate Limit (choices=null): {last_error}, retry_count={retry_count}"
+                    )
                     is_rate_limit_error = True
-                    delay = EXPONENTIAL_BACKOFF_DELAYS[min(retry_count, len(EXPONENTIAL_BACKOFF_DELAYS) - 1)]
+                    delay = EXPONENTIAL_BACKOFF_DELAYS[
+                        min(retry_count, len(EXPONENTIAL_BACKOFF_DELAYS) - 1)
+                    ]
                     time.sleep(delay)  # FIX-1: 使用指数退避
-                elif "429" in last_error or "rate limit" in error_str or "rate_limit" in error_str:
+                elif (
+                    "429" in last_error
+                    or "rate limit" in error_str
+                    or "rate_limit" in error_str
+                ):
                     # FIX-4: HTTP 429 限流错误
-                    logger.error(f"[Supervisor] HTTP 429 Rate Limit: {last_error}, retry_count={retry_count}")
+                    logger.error(
+                        f"[Supervisor] HTTP 429 Rate Limit: {last_error}, retry_count={retry_count}"
+                    )
                     is_rate_limit_error = True
                     # FIX-1: 优先使用 retry-after header
                     delay = 5  # 默认等待5s
                     time.sleep(delay)
                 else:
-                    logger.error(f"[Supervisor] 调用异常: {last_error}, retry_count={retry_count}")
+                    logger.error(
+                        f"[Supervisor] 调用异常: {last_error}, retry_count={retry_count}"
+                    )
                     time.sleep(2)
 
                 retry_count += 1
@@ -296,9 +328,13 @@ class Supervisor:
             messages = list(messages)
             messages.append(AIMessage(content=f"[Supervisor] {reason}"))
             new_travel_plan = dict(travel_plan)
-            logger.error(f"[Supervisor] 重试{max_retries}次后失败，强制结束（限流错误: {is_rate_limit_error}）")
+            logger.error(
+                f"[Supervisor] 重试{max_retries}次后失败，强制结束（限流错误: {is_rate_limit_error}）"
+            )
 
-        print(f"[DEBUG] Supervisor 返回，next_agent={next_agent}, travel_plan keys: {list(new_travel_plan.keys())}")
+        print(
+            f"[DEBUG] Supervisor 返回，next_agent={next_agent}, travel_plan keys: {list(new_travel_plan.keys())}"
+        )
         return {
             "messages": messages,
             "next_agent": next_agent,
@@ -333,7 +369,9 @@ class Supervisor:
                 for error_kw in ERROR_KEYWORDS:
                     if error_kw.lower() in value_str:
                         failed_agents.add(key)
-                        logger.warning(f"[Supervisor] 检测到 {key} 返回错误: {value_str[:50]}...")
+                        logger.warning(
+                            f"[Supervisor] 检测到 {key} 返回错误: {value_str[:50]}..."
+                        )
                         break
 
         # 按顺序选择下一个未收集的或执行失败的
@@ -352,7 +390,9 @@ class Supervisor:
             if agent_name in visited:
                 continue
             # 选择未完成或失败的
-            print(f"[DEBUG] 智能路由：已收集 {list(collected_keys)}，失败 {list(failed_agents)}，选择 {agent_name}")
+            print(
+                f"[DEBUG] 智能路由：已收集 {list(collected_keys)}，失败 {list(failed_agents)}，选择 {agent_name}"
+            )
             return agent_name, f"继续 {action}"
 
         # 所有信息已收集且无失败

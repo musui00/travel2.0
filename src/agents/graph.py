@@ -16,10 +16,12 @@ from src.agents.state import AgentState
 # 导入各个 Agent
 from src.agents.supervisor import Supervisor, create_supervisor
 from src.agents.transport_agent import TransportAgent, create_transport_agent
-from src.agents.accommodation_agent import AccommodationAgent, create_accommodation_agent
+from src.agents.accommodation_agent import (
+    AccommodationAgent,
+    create_accommodation_agent,
+)
 from src.agents.food_agent import FoodAgent, create_food_agent
 from src.agents.sightseeing_agent import SightseeingAgent, create_sightseeing_agent
-
 
 # ============================================================================
 # FIX-3: Supervisor 失败时的硬编码默认路由顺序
@@ -75,7 +77,9 @@ def supervisor_node(state: AgentState, supervisor: Any) -> AgentState:
         print(f"[DEBUG] Supervisor 执行失败: {error_msg}")
 
         # FIX-1: 指数退避等待
-        delay = EXPONENTIAL_BACKOFF_DELAYS[min(supervisor_error_count - 1, len(EXPONENTIAL_BACKOFF_DELAYS) - 1)]
+        delay = EXPONENTIAL_BACKOFF_DELAYS[
+            min(supervisor_error_count - 1, len(EXPONENTIAL_BACKOFF_DELAYS) - 1)
+        ]
         print(f"[DEBUG] 等待 {delay}s 后使用默认路由...")
         time.sleep(delay)
 
@@ -197,7 +201,9 @@ def sightseeing_node(state: AgentState, sightseeing_agent: Any) -> AgentState:
 # ============================================================================
 
 
-def route_supervisor(state: AgentState) -> Literal["transport", "accommodation", "food", "sightseeing", "__end__"]:
+def route_supervisor(
+    state: AgentState,
+) -> Literal["transport", "accommodation", "food", "sightseeing", "__end__"]:
     """Supervisor 路由决策
 
     根据 next_agent 字段决定下一步该调用哪个 Agent
@@ -220,7 +226,16 @@ def route_supervisor(state: AgentState) -> Literal["transport", "accommodation",
         return "__end__"
 
     # FIX: 错误关键字列表
-    ERROR_KEYWORDS = ["失败", "无法获取", "暂时无法", "错误", "exception", "error", "null", "none"]
+    ERROR_KEYWORDS = [
+        "失败",
+        "无法获取",
+        "暂时无法",
+        "错误",
+        "exception",
+        "error",
+        "null",
+        "none",
+    ]
 
     # FIX: 检查 travel_plan 是否有失败的结果，强制重试
     failed_keys = []
@@ -262,7 +277,12 @@ def route_supervisor(state: AgentState) -> Literal["transport", "accommodation",
     if next_agent != "FINISH" and next_agent in visited:
         print(f"[DEBUG] Agent {next_agent} 已访问过，使用智能路由...")
         # 使用智能路由选择下一个
-        remaining = ["TransportAgent", "SightseeingAgent", "AccommodationAgent", "FoodAgent"]
+        remaining = [
+            "TransportAgent",
+            "SightseeingAgent",
+            "AccommodationAgent",
+            "FoodAgent",
+        ]
         for agent in list(remaining):
             if agent in visited:
                 remaining.remove(agent)
@@ -271,7 +291,9 @@ def route_supervisor(state: AgentState) -> Literal["transport", "accommodation",
         else:
             next_agent = "FINISH"
 
-    print(f"[DEBUG] route_supervisor: next_agent = {next_agent}, visited = {visited}, iteration = {iteration}")
+    print(
+        f"[DEBUG] route_supervisor: next_agent = {next_agent}, visited = {visited}, iteration = {iteration}"
+    )
 
     return agent_to_node.get(next_agent, "__end__")
 
@@ -315,7 +337,9 @@ def create_graph(llm: Any) -> Any:
     # 使用 partial 绑定 agent 实例到节点函数
     supervisor_node_fn = partial(supervisor_node, supervisor=supervisor)
     transport_node_fn = partial(transport_node, transport_agent=transport_agent)
-    accommodation_node_fn = partial(accommodation_node, accommodation_agent=accommodation_agent)
+    accommodation_node_fn = partial(
+        accommodation_node, accommodation_agent=accommodation_agent
+    )
     food_node_fn = partial(food_node, food_agent=food_agent)
     sightseeing_node_fn = partial(sightseeing_node, sightseeing_agent=sightseeing_agent)
 

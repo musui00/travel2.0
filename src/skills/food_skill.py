@@ -290,7 +290,9 @@ def recommend_restaurant(city: str, cuisine: str = "", price_level: str = "") ->
     amap_service = get_amap_service()
     if amap_service:
         try:
-            amap_restaurants = amap_service.search_restaurants(city, cuisine=cuisine, limit=10)
+            amap_restaurants = amap_service.search_restaurants(
+                city, cuisine=cuisine, limit=10
+            )
             if amap_restaurants:
                 result = f"🍽️ {city} 餐厅推荐（高德地图实时数据）\n"
                 result += f"{'='*50}\n\n"

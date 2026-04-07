@@ -98,13 +98,10 @@ class SightseeingAgent:
                         arguments = tool_args
                     else:
                         arguments = json.dumps(tool_args)
-                    function_call = {
-                        "name": tool_name,
-                        "arguments": arguments
-                    }
-            elif hasattr(response, "additional_kwargs") and response.additional_kwargs.get(
-                "function_call"
-            ):
+                    function_call = {"name": tool_name, "arguments": arguments}
+            elif hasattr(
+                response, "additional_kwargs"
+            ) and response.additional_kwargs.get("function_call"):
                 function_call = response.additional_kwargs["function_call"]
 
             if function_call:
@@ -127,16 +124,22 @@ class SightseeingAgent:
                     # FIX-1: 防御性检查 - 如果 LLM 返回为空，使用原始工具结果
                     try:
                         final_response = self.llm.invoke(result_messages)
-                        if not final_response or not getattr(final_response, 'content', None):
+                        if not final_response or not getattr(
+                            final_response, "content", None
+                        ):
                             # FIX-1: LLM 返回为空，使用工具结果作为后备
                             final_content = tool_result
-                            logger.warning(f"[SightseeingAgent] LLM 返回为空，使用工具结果: {tool_name}")
+                            logger.warning(
+                                f"[SightseeingAgent] LLM 返回为空，使用工具结果: {tool_name}"
+                            )
                         else:
                             final_content = final_response.content
                     except Exception as llm_err:
                         # FIX-1: LLM 调用失败，使用工具结果作为后备
                         final_content = tool_result
-                        logger.error(f"[SightseeingAgent] LLM 调用失败: {llm_err}, 使用工具结果")
+                        logger.error(
+                            f"[SightseeingAgent] LLM 调用失败: {llm_err}, 使用工具结果"
+                        )
 
                     messages = list(messages)
                     messages.append(AIMessage(content=final_content))
@@ -155,7 +158,9 @@ class SightseeingAgent:
             messages.append(AIMessage(content=error_msg))
             travel_plan["sightseeing"] = error_msg
 
-        print(f"[DEBUG] SightseeingAgent 返回，travel_plan keys: {list(travel_plan.keys())}")
+        print(
+            f"[DEBUG] SightseeingAgent 返回，travel_plan keys: {list(travel_plan.keys())}"
+        )
         return {
             "messages": messages,
             "next_agent": "SUPERVISOR",

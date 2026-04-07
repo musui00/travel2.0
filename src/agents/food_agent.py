@@ -96,13 +96,10 @@ class FoodAgent:
                         arguments = tool_args
                     else:
                         arguments = json.dumps(tool_args)
-                    function_call = {
-                        "name": tool_name,
-                        "arguments": arguments
-                    }
-            elif hasattr(response, "additional_kwargs") and response.additional_kwargs.get(
-                "function_call"
-            ):
+                    function_call = {"name": tool_name, "arguments": arguments}
+            elif hasattr(
+                response, "additional_kwargs"
+            ) and response.additional_kwargs.get("function_call"):
                 function_call = response.additional_kwargs["function_call"]
 
             if function_call:
@@ -125,14 +122,20 @@ class FoodAgent:
                     # FIX-1: 防御性检查 - 如果 LLM 返回为空，使用原始工具结果
                     try:
                         final_response = self.llm.invoke(result_messages)
-                        if not final_response or not getattr(final_response, 'content', None):
+                        if not final_response or not getattr(
+                            final_response, "content", None
+                        ):
                             final_content = tool_result
-                            logger.warning(f"[FoodAgent] LLM 返回为空，使用工具结果: {tool_name}")
+                            logger.warning(
+                                f"[FoodAgent] LLM 返回为空，使用工具结果: {tool_name}"
+                            )
                         else:
                             final_content = final_response.content
                     except Exception as llm_err:
                         final_content = tool_result
-                        logger.error(f"[FoodAgent] LLM 调用失败: {llm_err}, 使用工具结果")
+                        logger.error(
+                            f"[FoodAgent] LLM 调用失败: {llm_err}, 使用工具结果"
+                        )
 
                     messages = list(messages)
                     messages.append(AIMessage(content=final_content))

@@ -21,7 +21,6 @@ from src.agents.state import AgentState
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 
-
 # ============================================================================
 # FIX-1: 多模型 Fallback 系统（使用外部状态管理）
 # ============================================================================
@@ -163,6 +162,7 @@ def analyze_image_scene(llm, image_path: str) -> str:
     try:
         # 读取图片并转为 base64
         import base64
+
         with open(image_path, "rb") as f:
             image_data = base64.b64encode(f.read()).decode("utf-8")
         image_url = f"data:image/jpeg;base64,{image_data}"
@@ -371,6 +371,7 @@ def main():
             except Exception as e:
                 logger.error(f"LangGraph 执行失败: {e}")
                 import traceback
+
                 traceback.print_exc()
                 print(f"⚠️ 执行失败: {e}")
                 use_langgraph = False

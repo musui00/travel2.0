@@ -95,11 +95,10 @@ class MainAgent:
                         arguments = tool_args
                     else:
                         arguments = json.dumps(tool_args)
-                    function_call = {
-                        "name": tool_name,
-                        "arguments": arguments
-                    }
-            elif hasattr(response, "additional_kwargs") and response.additional_kwargs.get("function_call"):
+                    function_call = {"name": tool_name, "arguments": arguments}
+            elif hasattr(
+                response, "additional_kwargs"
+            ) and response.additional_kwargs.get("function_call"):
                 function_call = response.additional_kwargs["function_call"]
 
             if function_call:
@@ -109,7 +108,9 @@ class MainAgent:
                 # 获取工具并执行（带重试）
                 tool = self._get_tool(function_name)
                 if tool:
-                    return self._invoke_tool_with_retry(tool, arguments, function_name, messages, response, retry_count)
+                    return self._invoke_tool_with_retry(
+                        tool, arguments, function_name, messages, response, retry_count
+                    )
                 else:
                     return f"未找到工具: {function_name}"
             else:
@@ -143,23 +144,33 @@ class MainAgent:
         except ToolInvokeError as e:
             # Layer 1: 基础重试 - 重新调用工具
             if retry_count < MAX_RETRIES:
-                print(f"⚠️ 工具 {function_name} 调用失败，进行第 {retry_count + 1} 次重试...")
+                print(
+                    f"⚠️ 工具 {function_name} 调用失败，进行第 {retry_count + 1} 次重试..."
+                )
                 return self._run_with_retry(messages, retry_count + 1)
 
             # Layer 2: 参数错误修正
-            return self._error_correction(e, function_name, messages, response, retry_count)
+            return self._error_correction(
+                e, function_name, messages, response, retry_count
+            )
         except Exception as e:
             error_msg = str(e)
             # 判断错误类型
             if "参数" in error_msg or "invalid" in error_msg.lower():
                 # 参数错误 - 尝试修正参数
-                return self._correct_parameters(error_msg, function_name, messages, response, retry_count)
+                return self._correct_parameters(
+                    error_msg, function_name, messages, response, retry_count
+                )
             elif "API" in error_msg or "timeout" in error_msg.lower():
                 # API不可用 - 尝试替代工具
-                return self._try_alternative_tool(error_msg, function_name, messages, response)
+                return self._try_alternative_tool(
+                    error_msg, function_name, messages, response
+                )
             else:
                 # 业务错误（如无结果）- 直接返回合理回复
-                return self._handle_business_error(error_msg, function_name, messages, response)
+                return self._handle_business_error(
+                    error_msg, function_name, messages, response
+                )
 
     def _error_correction(
         self,
@@ -187,15 +198,20 @@ class MainAgent:
 
         # 检查是否有新的函数调用（LangChain 0.3+ 使用 tool_calls）
         new_function_call = None
-        if hasattr(correction_response, "tool_calls") and correction_response.tool_calls:
+        if (
+            hasattr(correction_response, "tool_calls")
+            and correction_response.tool_calls
+        ):
             for tc in correction_response.tool_calls:
                 if tc.get("name"):
                     new_function_call = {
                         "name": tc["name"],
-                        "arguments": tc.get("args", "{}")
+                        "arguments": tc.get("args", "{}"),
                     }
                     break
-        elif hasattr(correction_response, "additional_kwargs") and correction_response.additional_kwargs.get("function_call"):
+        elif hasattr(
+            correction_response, "additional_kwargs"
+        ) and correction_response.additional_kwargs.get("function_call"):
             new_function_call = correction_response.additional_kwargs["function_call"]
 
         if new_function_call:
@@ -236,15 +252,20 @@ class MainAgent:
 
         # 检查是否有函数调用（LangChain 0.3+ 使用 tool_calls）
         new_function_call = None
-        if hasattr(correction_response, "tool_calls") and correction_response.tool_calls:
+        if (
+            hasattr(correction_response, "tool_calls")
+            and correction_response.tool_calls
+        ):
             for tc in correction_response.tool_calls:
                 if tc.get("name"):
                     new_function_call = {
                         "name": tc["name"],
-                        "arguments": tc.get("args", "{}")
+                        "arguments": tc.get("args", "{}"),
                     }
                     break
-        elif hasattr(correction_response, "additional_kwargs") and correction_response.additional_kwargs.get("function_call"):
+        elif hasattr(
+            correction_response, "additional_kwargs"
+        ) and correction_response.additional_kwargs.get("function_call"):
             new_function_call = correction_response.additional_kwargs["function_call"]
 
         if new_function_call:
@@ -253,8 +274,12 @@ class MainAgent:
 
             tool = self._get_tool(new_function_name)
             return self._invoke_tool_with_retry(
-                tool, new_arguments, new_function_name,
-                messages + [correction_response], correction_response, retry_count + 1
+                tool,
+                new_arguments,
+                new_function_name,
+                messages + [correction_response],
+                correction_response,
+                retry_count + 1,
             )
         return correction_response.content
 
@@ -301,7 +326,9 @@ class MainAgent:
     ) -> str:
         """处理工具结果并生成最终响应"""
         messages.append(response)
-        messages.append(HumanMessage(content=f"工具 {function_name} 返回结果: {result}"))
+        messages.append(
+            HumanMessage(content=f"工具 {function_name} 返回结果: {result}")
+        )
         final_response = self.llm.invoke(messages)
         return final_response.content
 

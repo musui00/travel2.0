@@ -102,7 +102,9 @@ class TransportAgent:
                 # FIX: 防御性检查 response 是否为 None
                 if response is None:
                     last_error = "LLM 返回 None 响应"
-                    logger.error(f"[TransportAgent] {last_error}, retry_count={retry_count}")
+                    logger.error(
+                        f"[TransportAgent] {last_error}, retry_count={retry_count}"
+                    )
                     retry_count += 1
                     continue
 
@@ -117,13 +119,10 @@ class TransportAgent:
                             arguments = json.dumps(tool_args)
                         else:
                             arguments = tool_args
-                        function_call = {
-                            "name": tool_name,
-                            "arguments": arguments
-                        }
-                elif hasattr(response, "additional_kwargs") and response.additional_kwargs.get(
-                    "function_call"
-                ):
+                        function_call = {"name": tool_name, "arguments": arguments}
+                elif hasattr(
+                    response, "additional_kwargs"
+                ) and response.additional_kwargs.get("function_call"):
                     function_call = response.additional_kwargs["function_call"]
 
                 if function_call:
@@ -173,12 +172,21 @@ class TransportAgent:
 
             except Exception as e:
                 last_error = str(e)
-                logger.error(f"[TransportAgent] 调用异常: {last_error}, retry_count={retry_count}")
+                logger.error(
+                    f"[TransportAgent] 调用异常: {last_error}, retry_count={retry_count}"
+                )
                 # FIX-1: 使用指数退避
                 error_str = str(e).lower()
-                if "null value for 'choices'" in last_error or "choices is none" in error_str:
-                    delay = EXPONENTIAL_BACKOFF_DELAYS[min(retry_count, len(EXPONENTIAL_BACKOFF_DELAYS) - 1)]
-                    logger.error(f"[TransportAgent] Rate Limit (choices=null): {last_error}")
+                if (
+                    "null value for 'choices'" in last_error
+                    or "choices is none" in error_str
+                ):
+                    delay = EXPONENTIAL_BACKOFF_DELAYS[
+                        min(retry_count, len(EXPONENTIAL_BACKOFF_DELAYS) - 1)
+                    ]
+                    logger.error(
+                        f"[TransportAgent] Rate Limit (choices=null): {last_error}"
+                    )
                     time.sleep(delay)
                 elif "429" in last_error or "rate limit" in error_str:
                     time.sleep(5)  # rate limit
@@ -199,7 +207,9 @@ class TransportAgent:
             travel_plan = new_travel_plan
 
         # 返回更新后的状态
-        logger.info(f"[DEBUG] TransportAgent 返回，travel_plan keys: {list(travel_plan.keys())}")
+        logger.info(
+            f"[DEBUG] TransportAgent 返回，travel_plan keys: {list(travel_plan.keys())}"
+        )
         return {
             "messages": messages,
             "next_agent": "SUPERVISOR",

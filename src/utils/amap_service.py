@@ -170,7 +170,9 @@ class AmapService:
         logger.info(f"高德 POI 搜索: {keywords} in {city}, 返回 {len(pois)} 条结果")
         return pois
 
-    def search_attractions(self, city: str, keywords: str = "景点", limit: int = 10) -> List[POIInfo]:
+    def search_attractions(
+        self, city: str, keywords: str = "景点", limit: int = 10
+    ) -> List[POIInfo]:
         """搜索景点
 
         Args:
@@ -181,10 +183,14 @@ class AmapService:
         Returns:
             景点列表
         """
-        pois = self.search_poi(keywords, city, poi_type=self.POI_TYPES["景点"], offset=limit)
+        pois = self.search_poi(
+            keywords, city, poi_type=self.POI_TYPES["景点"], offset=limit
+        )
         return pois
 
-    def search_hotels(self, city: str, keywords: str = "酒店", limit: int = 10) -> List[POIInfo]:
+    def search_hotels(
+        self, city: str, keywords: str = "酒店", limit: int = 10
+    ) -> List[POIInfo]:
         """搜索酒店
 
         Args:
@@ -195,7 +201,9 @@ class AmapService:
         Returns:
             酒店列表
         """
-        pois = self.search_poi(keywords, city, poi_type=self.POI_TYPES["酒店"], offset=limit)
+        pois = self.search_poi(
+            keywords, city, poi_type=self.POI_TYPES["酒店"], offset=limit
+        )
         return pois
 
     def search_restaurants(
@@ -213,7 +221,9 @@ class AmapService:
             餐厅列表
         """
         search_keywords = f"{cuisine}{keywords}" if cuisine else keywords
-        pois = self.search_poi(search_keywords, city, poi_type=self.POI_TYPES["餐厅"], offset=limit)
+        pois = self.search_poi(
+            search_keywords, city, poi_type=self.POI_TYPES["餐厅"], offset=limit
+        )
         return pois
 
     def get_weather(self, city: str) -> dict:
@@ -235,7 +245,9 @@ class AmapService:
 
         if data.get("lives"):
             weather = data["lives"][0]
-            logger.info(f"查询天气: {city}, 天气={weather.get('weather')}, 温度={weather.get('temperature')}")
+            logger.info(
+                f"查询天气: {city}, 天气={weather.get('weather')}, 温度={weather.get('temperature')}"
+            )
             return {
                 "city": weather.get("city", ""),
                 "weather": weather.get("weather", ""),

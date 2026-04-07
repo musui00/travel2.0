@@ -96,13 +96,10 @@ class AccommodationAgent:
                         arguments = json.dumps(tool_args)
                     else:
                         arguments = tool_args
-                    function_call = {
-                        "name": tool_name,
-                        "arguments": arguments
-                    }
-            elif hasattr(response, "additional_kwargs") and response.additional_kwargs.get(
-                "function_call"
-            ):
+                    function_call = {"name": tool_name, "arguments": arguments}
+            elif hasattr(
+                response, "additional_kwargs"
+            ) and response.additional_kwargs.get("function_call"):
                 function_call = response.additional_kwargs["function_call"]
 
             if function_call:
@@ -125,14 +122,20 @@ class AccommodationAgent:
                     # FIX-1: 防御性检查 - 如果 LLM 返回为空，使用原始工具结果
                     try:
                         final_response = self.llm.invoke(result_messages)
-                        if not final_response or not getattr(final_response, 'content', None):
+                        if not final_response or not getattr(
+                            final_response, "content", None
+                        ):
                             final_content = tool_result
-                            logger.warning(f"[AccommodationAgent] LLM 返回为空，使用工具结果: {tool_name}")
+                            logger.warning(
+                                f"[AccommodationAgent] LLM 返回为空，使用工具结果: {tool_name}"
+                            )
                         else:
                             final_content = final_response.content
                     except Exception as llm_err:
                         final_content = tool_result
-                        logger.error(f"[AccommodationAgent] LLM 调用失败: {llm_err}, 使用工具结果")
+                        logger.error(
+                            f"[AccommodationAgent] LLM 调用失败: {llm_err}, 使用工具结果"
+                        )
 
                     messages = list(messages)
                     messages.append(AIMessage(content=final_content))
@@ -151,7 +154,9 @@ class AccommodationAgent:
             messages.append(AIMessage(content=error_msg))
             travel_plan["accommodation"] = error_msg
 
-        print(f"[DEBUG] AccommodationAgent 返回，travel_plan keys: {list(travel_plan.keys())}")
+        print(
+            f"[DEBUG] AccommodationAgent 返回，travel_plan keys: {list(travel_plan.keys())}"
+        )
         return {
             "messages": messages,
             "next_agent": "SUPERVISOR",
