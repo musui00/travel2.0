@@ -1,6 +1,6 @@
 """
-智能旅游规划系统 - 主入口
-根据图片推荐相似景点 + 天气查询 + 交通推荐
+智能旅游规划系统 - 主入口（LangGraph Multi-Agent 版）
+通过 Supervisor 模式协调多个 Sub-Agent
 """
 
 import os
@@ -17,6 +17,119 @@ load_dotenv()
 
 from src.skills import test_tool
 from src.utils.logger import logger
+from src.agents.state import AgentState
+from langchain_core.messages import HumanMessage
+from langchain_openai import ChatOpenAI
+
+
+# ============================================================================
+# FIX-1: 多模型 Fallback 系统（使用外部状态管理）
+# ============================================================================
+
+# 指数退避重试配置
+EXPONENTIAL_BACKOFF_DELAYS = [5, 15, 30]  # 第1次5s，第2次15s，第3次30s
+MAX_MODEL_RETRIES = 2  # 模型切换前的最大重试次数
+
+# 全局模型状态（使用 dict 避免动态属性问题）
+_llm_state = {
+    "current_model_idx": 0,
+    "consecutive_failures": 0,
+    "current_model": "",
+    "model_list": [],
+}
+
+
+def create_llm_with_fallback(config: dict):
+    """创建支持多模型 fallback 的 LLM
+
+    FIX-1: 实现多模型 Fallback 机制
+    - Primary 模型连续失败2次后，自动切换到 Fallback 模型
+    - 在日志中标注当前使用的模型
+
+    Args:
+        config: 配置字典
+
+    Returns:
+        LLM 实例
+    """
+    global _llm_state
+
+    # 获取模型列表
+    model_list = [config["MODEL_NAME"]] + config.get("MODEL_FALLBACK_LIST", [])
+
+    # 初始化全局状态
+    _llm_state["model_list"] = model_list
+    _llm_state["current_model_idx"] = 0
+    _llm_state["consecutive_failures"] = 0
+    _llm_state["current_model"] = model_list[0]
+
+    # 创建 LLM 实例
+    llm = ChatOpenAI(
+        model=model_list[0],
+        base_url=config["MODELSCOPE_BASE_URL"],
+        api_key=config["MODELSCOPE_API_KEY"],
+        temperature=0.7,
+        max_retries=2,
+        request_timeout=60,
+    )
+
+    logger.info(f"[LLM] 初始化完成，使用模型: {model_list[0]}")
+    print(f"[LLM] ✅ 当前使用模型: {model_list[0]}")
+
+    return llm
+
+
+def switch_to_next_model(config: dict) -> ChatOpenAI | None:
+    """切换到下一个模型
+
+    FIX-1: 模型失败时调用此函数切换
+
+    Args:
+        config: 配置字典
+
+    Returns:
+        新的 LLM 实例，如果所有模型都失败则返回 None
+    """
+    global _llm_state
+
+    _llm_state["current_model_idx"] += 1
+
+    if _llm_state["current_model_idx"] < len(_llm_state["model_list"]):
+        new_model = _llm_state["model_list"][_llm_state["current_model_idx"]]
+        _llm_state["current_model"] = new_model
+        _llm_state["consecutive_failures"] = 0  # 重置失败计数
+
+        logger.warning(f"[LLM] 切换到备选模型: {new_model}")
+        print(f"[LLM] 🔄 切换到备选模型: {new_model}")
+
+        return ChatOpenAI(
+            model=new_model,
+            base_url=config["MODELSCOPE_BASE_URL"],
+            api_key=config["MODELSCOPE_API_KEY"],
+            temperature=0.7,
+            max_retries=2,
+            request_timeout=60,
+        )
+    else:
+        logger.error("[LLM] 所有模型均已失败")
+        print(f"[LLM] ⚠️ 所有模型均已失败")
+        return None
+
+
+def get_current_model() -> str:
+    """获取当前使用的模型名称"""
+    return _llm_state["current_model"]
+
+
+def record_failure():
+    """记录一次失败，用于触发模型切换"""
+    global _llm_state
+    _llm_state["consecutive_failures"] += 1
+
+
+def should_switch_model() -> bool:
+    """判断是否应该切换模型"""
+    return _llm_state["consecutive_failures"] >= MAX_MODEL_RETRIES
 
 
 def load_config():
@@ -45,17 +158,27 @@ def encode_image(image_path: str) -> str:
 
 def analyze_image_scene(llm, image_path: str) -> str:
     """分析图片，识别场景类型（海边、公园、湖畔等）"""
-    base64_image = encode_image(image_path)
+    # 尝试 URL 方式加载图片（更稳定）
+    # 如果是本地文件，转换为 data URL
+    try:
+        # 读取图片并转为 base64
+        import base64
+        with open(image_path, "rb") as f:
+            image_data = base64.b64encode(f.read()).decode("utf-8")
+        image_url = f"data:image/jpeg;base64,{image_data}"
+    except Exception:
+        # 如果读取失败，使用默认路径
+        image_url = image_path
 
     prompt = """你是一个专业的图像识别助手。请仔细分析用户提供的图片，识别图片中的场景类型。
 
-请从以下类型中选择最匹配的一个或多个：
+请从以下类型中选择最匹配的一个：
 - 海滩（沙滩、海滨、海岸）
 - 湖泊（湖边、湖畔、湖光）
 - 公园（园林、植物园、花园）
 - 山景（山峰、峡谷）
 - 古镇（老街、历史街区）
-- 寺庙（古刹、禅寺）
+- 寺庙（古刹、禅寺、教堂）
 - 游乐场（主题公园、动物园）
 
 请用简洁的语言描述图片中的场景，并给出场景类型。格式如下：
@@ -64,7 +187,7 @@ def analyze_image_scene(llm, image_path: str) -> str:
 
 请用中文回复。"""
 
-    # 构建消息
+    # 构建消息 - 使用简化的内容格式
     messages = [
         {"role": "system", "content": prompt},
         {
@@ -73,7 +196,7 @@ def analyze_image_scene(llm, image_path: str) -> str:
                 {"type": "text", "text": "请分析这张图片，识别场景类型。"},
                 {
                     "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                    "image_url": {"url": image_url},
                 },
             ],
         },
@@ -108,72 +231,10 @@ def extract_scene_type(analysis_result: str) -> str:
     return "公园"
 
 
-def recommend_transport(from_city: str, to_city: str) -> str:
-    """推荐交通工具"""
-    # 判断是否是同城
-    is_same_city = from_city == to_city
-
-    if is_same_city:
-        result = f"📍 {from_city}市内交通推荐：\n\n"
-        result += f"{'='*50}\n\n"
-
-        # 当地交通
-        result += "🚇 公共交通：\n"
-        result += f"   • 地铁：{from_city}地铁网络发达，建议优先选择\n"
-        result += f"   • 公交：票价实惠，线路覆盖广\n"
-        result += f"   • 建议使用地图APP规划路线\n\n"
-
-        result += "🚗 打车/租车：\n"
-        result += f"   • 滴滴出行/T3出行：方便快捷\n"
-        result += f"   • 出租车：可用APP叫车或路边拦车\n"
-        result += f"   • 共享单车：适合短途出行\n\n"
-
-        result += "🗺️ 出行建议：\n"
-        result += f"   • 建议使用高德/百度地图APP导航\n"
-        result += f"   • 早高峰(7-9点)建议提前出行\n"
-        result += f"   • 景区周边停车不便，建议公共交通\n"
-
-        return result
-
-    # 跨城交通
-    result = f"🚄 从 {from_city} 到 {to_city} 的交通方式：\n\n"
-    result += f"{'='*50}\n\n"
-
-    # 航班
-    try:
-        flight_result = test_tool(
-            "flight_search", {"from_city": from_city, "to_city": to_city}
-        )
-        result += "✈️ 航班信息：\n"
-        # 取前2个航班
-        lines = flight_result.split("\n")
-        for line in lines[:10]:
-            if line.strip():
-                result += "   " + line + "\n"
-        result += "\n"
-    except Exception as e:
-        logger.error(f"航班查询失败: {e}")
-        result += "   航班查询暂不可用\n\n"
-
-    # 高铁
-    result += "🚄 高铁/火车建议：\n"
-    result += "   • 建议乘坐高铁，舒适快捷\n"
-    result += "   • 提前在12306官网/APP预订车票\n"
-    result += "   • 高铁站通常位于市中心附近，交通便利\n\n"
-
-    # 当地交通
-    result += "🚗 到达后市内交通：\n"
-    result += "   • 地铁+公交组合：经济实惠\n"
-    result += "   • 滴滴打车/出租车：方便快捷\n"
-    result += "   • 共享单车：适合短途游览\n"
-
-    return result
-
-
 def main():
-    """主函数 - 使用 MainAgent 智能处理用户请求"""
+    """主函数 - 使用 LangGraph Multi-Agent 架构"""
     print("=" * 60)
-    print("欢迎使用智能旅游规划系统 (RAG增强版)")
+    print("欢迎使用智能旅游规划系统 (LangGraph Multi-Agent 版)")
     print("=" * 60)
     print()
 
@@ -201,30 +262,25 @@ def main():
     print("示例：厦门、杭州、哈尔滨")
     target_city = input("目标城市: ").strip()
 
-    # 3. 获取现处位置
-    print("\n【步骤3】请输入您当前所在城市：")
+    # 3. 获取旅游日期
+    print("\n【步骤3】请输入期望的旅游日期：")
+    print("示例：4.6到4.8 或 2024-04-06 至 2024-04-08")
+    travel_dates = input("旅游日期: ").strip()
+
+    # 4. 获取现处位置
+    print("\n【步骤4】请输入您当前所在城市：")
     print("示例：上海、深圳、广州")
     from_city = input("现处城市: ").strip()
 
     print("\n" + "=" * 60)
-    print("正在通过 MainAgent 智能生成旅游规划...")
-    print("(大模型将自动决定何时调用 RAG 检索本地知识库)")
+    print("正在通过 LangGraph Multi-Agent 智能生成旅游规划...")
+    print("(Supervisor 将协调 Transport/Accommodation/Food/Sightseeing Agent)")
     print("=" * 60)
 
-    # 4. 初始化 LLM 和 MainAgent
+    # 4. 初始化 LLM 和 LangGraph
     try:
-        from langchain_openai import ChatOpenAI
-        from src.agents.main_agent import MainAgent
-
-        llm = ChatOpenAI(
-            model=config["MODEL_NAME"],
-            base_url=config["MODELSCOPE_BASE_URL"],
-            api_key=config["MODELSCOPE_API_KEY"],
-            temperature=0.7,
-        )
-
-        # 创建 MainAgent（会自动加载所有 Tools 包括 search_local_guide）
-        agent = MainAgent(llm)
+        # FIX-1: 使用多模型 Fallback 系统
+        llm = create_llm_with_fallback(config)
 
         # 5. 图片分析 - 识别场景类型
         scene_type = None
@@ -245,29 +301,92 @@ def main():
             print(f"⚠️ 图片文件不存在: {image_path}")
             scene_type = "公园"
 
-        # 6. 构建用户请求，交给 MainAgent 处理
+        # 6. 构建用户请求（包含日期信息，供天气和航班使用）
         user_request = f"""我想去 {target_city} 旅游，现居住在 {from_city}。
+旅行日期：{travel_dates}
+出发日期：{travel_dates}
 
 根据我上传的图片，识别到的场景类型是：{scene_type}
 
 请帮我生成一份完整的旅游规划，包括：
-1. 推荐适合 {scene_type} 类型的景点
-2. 查询 {target_city} 的天气情况
-3. 从 {from_city} 到 {target_city} 的交通方式
+1. 推荐适合 {scene_type} 类型的景点（使用本地知识库检索详细攻略）
+2. 查询 {target_city} 在 {travel_dates} 期间的天气情况
+3. 从 {from_city} 到 {target_city} 的航班/交通信息
 4. {target_city} 的住宿推荐
-5. {target_city} 的美食推荐
-6. 如果有本地知识库，请检索 {target_city} 的详细旅游攻略"""
+5. {target_city} ��美��推荐
 
-        # 7. MainAgent 自动处理（会调用 RAG 等工具）
-        print("\n" + "-" * 40)
-        print("【AI 智能规划中...】")
-        print("-" * 40)
-        result = agent.run(user_request, image_analysis=image_analysis)
+注意：
+- 天气和交通信息必须实时查询（不使用本地数据库）
+- 景点推荐可以使用本地知识库（RAG）
+- 请用中文回复，结构清晰地展示各部分内容"""
 
-        print("\n" + "=" * 60)
-        print("【旅游规划结果】")
-        print("=" * 60)
-        print(result)
+        # 7. 尝试使用 LangGraph（如果已安装 langgraph）
+        use_langgraph = False
+        try:
+            from src.agents.graph import create_travel_planner
+
+            print("\n正在初始化 LangGraph Multi-Agent...")
+            app = create_travel_planner(llm)
+            use_langgraph = True
+        except ImportError as e:
+            print(f"⚠️ LangGraph 未安装: {e}")
+            print("将回退到单 Agent 模式")
+            use_langgraph = False
+
+        if use_langgraph:
+            # 使用 LangGraph 工作流
+            print("\n" + "-" * 40)
+            print("【LangGraph Multi-Agent 规划中...】")
+            print("-" * 40)
+
+            # 初始化状态 - 使用 "FINISH" 让 Supervisor 做出初始路由决策
+            initial_state: AgentState = {
+                "messages": [HumanMessage(content=user_request)],
+                "next_agent": "FINISH",  # 触发 Supervisor 首次决策
+                "travel_plan": {},
+                "visited_agents": set(),  # FIX: 初始化已访问 Agent 集合
+                "iteration_count": 0,  # FIX: 初始化迭代计数器
+            }
+
+            # 执行工作流
+            try:
+                result = app.invoke(initial_state)
+
+                # 调试：打印完整结果
+                print(f"[DEBUG] LangGraph 结果: {result}")
+
+                final_plan = result.get("travel_plan", {})
+
+                print("\n" + "=" * 60)
+                print("【旅游规划结果】")
+                print("=" * 60)
+
+                # 按顺序展示各 Agent 的结果
+                for agent_name, content in final_plan.items():
+                    if content:
+                        print(f"\n### {agent_name.upper()} ###\n")
+                        print(content[:500] if len(content) > 500 else content)
+                        print()
+
+            except Exception as e:
+                logger.error(f"LangGraph 执行失败: {e}")
+                import traceback
+                traceback.print_exc()
+                print(f"⚠️ 执行失败: {e}")
+                use_langgraph = False
+
+        if not use_langgraph:
+            # 回退到原来的单 Agent 模式
+            print("\n使用单 Agent 模式...")
+            from src.agents.main_agent import MainAgent
+
+            agent = MainAgent(llm)
+            result = agent.run(user_request, image_analysis=image_analysis)
+
+            print("\n" + "=" * 60)
+            print("【旅游规划结果】")
+            print("=" * 60)
+            print(result)
 
     except Exception as e:
         logger.error(f"MainAgent 执行失败: {e}")

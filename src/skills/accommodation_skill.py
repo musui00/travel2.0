@@ -2,10 +2,13 @@
 住宿推荐 Skill
 根据目的地和偏好推荐酒店/民宿
 使用 LangChain Tool 格式
+支持高德地图 API 实时搜索
 """
 
 from typing import Dict, List
 from langchain_core.tools import tool
+
+from src.utils.amap_service import get_amap_service
 
 # 酒店数据库
 HOTEL_DATABASE = {
@@ -228,7 +231,34 @@ def recommend_hotel(city: str, budget: str = "舒适", days: int = 1) -> str:
     if not city:
         return "请提供目标城市"
 
-    # 获取城市酒店数据
+    # 首先尝试使用高德 API 搜索
+    amap_service = get_amap_service()
+    if amap_service:
+        try:
+            amap_hotels = amap_service.search_hotels(city, limit=10)
+            if amap_hotels:
+                result = f"🏨 {city} 酒店推荐（高德地图实时数据）\n"
+                result += f"{'='*50}\n\n"
+
+                for i, hotel in enumerate(amap_hotels[:6], 1):
+                    result += f"🏨 推荐 {i}: {hotel.name}\n"
+                    result += f"   📍 地址: {hotel.address or '暂无'}\n"
+                    result += f"   📞 电话: {hotel.tel or '暂无'}\n"
+                    result += f"   🗺️ 坐标: ({hotel.location.longitude}, {hotel.location.latitude})\n"
+                    result += f"   🏷️ 类型: {hotel.type}\n\n"
+
+                result += f"{'='*50}\n"
+                result += f"💡 预订建议：\n"
+                result += f"   • 以上数据来自高德地图实时搜索\n"
+                result += f"   • 建议通过携程/美团等平台预订\n"
+                result += f"   • 入住 {days} 天建议选择连住优惠\n"
+
+                return result
+        except Exception:
+            # 高德 API 调用失败，回退到本地数据库
+            pass
+
+    # 回退到本地数据库
     city_hotels = HOTEL_DATABASE.get(city, {})
 
     if not city_hotels:

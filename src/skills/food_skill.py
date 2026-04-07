@@ -2,10 +2,13 @@
 餐饮推荐 Skill
 根据城市和菜系推荐餐厅、小吃
 使用 LangChain Tool 格式
+支持高德地图 API 实时搜索
 """
 
 from typing import Dict, List
 from langchain_core.tools import tool
+
+from src.utils.amap_service import get_amap_service
 
 # 美食数据库
 FOOD_DATABASE = {
@@ -283,7 +286,33 @@ def recommend_restaurant(city: str, cuisine: str = "", price_level: str = "") ->
     if not city:
         return "请提供目标城市"
 
-    # 获取城市美食数据
+    # 首先尝试使用高德 API 搜索
+    amap_service = get_amap_service()
+    if amap_service:
+        try:
+            amap_restaurants = amap_service.search_restaurants(city, cuisine=cuisine, limit=10)
+            if amap_restaurants:
+                result = f"🍽️ {city} 餐厅推荐（高德地图实时数据）\n"
+                result += f"{'='*50}\n\n"
+
+                for i, restaurant in enumerate(amap_restaurants[:6], 1):
+                    result += f"🍴 推荐 {i}: {restaurant.name}\n"
+                    result += f"   📍 地址: {restaurant.address or '暂无'}\n"
+                    result += f"   📞 电话: {restaurant.tel or '暂无'}\n"
+                    result += f"   🏷️ 类型: {restaurant.type}\n\n"
+
+                result += f"{'='*50}\n"
+                result += f"💡 美食推荐理由：\n"
+                result += f"   • 以上餐厅来自高德地图实时搜索\n"
+                result += f"   • 建议提前预约，避免排队\n"
+                result += f"   • 可通过大众点评查看实时排队情况\n"
+
+                return result
+        except Exception:
+            # 高德 API 调用失败，回退到本地数据库
+            pass
+
+    # 回退到本地数据库
     city_foods = FOOD_DATABASE.get(city, {})
 
     if not city_foods:

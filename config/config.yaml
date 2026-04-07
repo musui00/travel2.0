@@ -4,6 +4,13 @@ MODELSCOPE_BASE_URL: https://api-inference.modelscope.cn/v1
 MODELSCOPE_API_KEY: ${MODELSCOPE_API_KEY}
 MODEL_NAME: moonshotai/Kimi-K2.5
 
+# FIX-1: 备选模型列表（需要对应 API key 才会生效，暂不启用）
+# MODEL_FALLBACK_LIST:
+#   - gpt-3.5-turbo   # 需要 OpenAI API key
+#   - gpt-4o-mini     # 需要 OpenAI API key
+
 # 外部API配置
+# 高德地图 API Key（来自 amap_api_guide.md）
+AMAP_API_KEY: edd101bb6baf529af709a25a18ce38f9
 # WEATHER_API_KEY: ${WEATHER_API_KEY}
 # FLIGHT_API_KEY: ${FLIGHT_API_KEY}
